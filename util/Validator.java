@@ -1,17 +1,13 @@
 package util;
 
 import java.util.regex.Pattern;
+import model.User;
 
 public class Validator {
-    public static boolean isValidPassword(String password, String userName) {
-        if (password == null || userName == null) return false;
-
-        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$";
-
-        if (!Pattern.matches(regex, password)) {
-            return false;
-        }
-
-        return !password.contains(userName);
+    public static boolean isValidPassword(User newUser) {
+        String pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$";
+        boolean patternCondition = newUser.getPassword().matches(pattern);
+        boolean havingUserName = newUser.getPassword().contains(newUser.getUserName());
+        return patternCondition && !havingUserName;
     }
 }
