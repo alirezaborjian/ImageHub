@@ -5,21 +5,27 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Front-end",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "Front-end (profile mode)",
+            "name": "FrontEnd",
+            "cwd": "FrontEnd",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "program": "lib/LoginAndSignUp.dart" // 
         },
         {
-            "name": "Front-end (release mode)",
+            "name": "FrontEnd (profile mode)",
+            "cwd": "FrontEnd",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "profile",
+            "program": "lib/LoginAndSignUp.dart" // 
+        },
+        {
+            "name": "FrontEnd (release mode)",
+            "cwd": "FrontEnd",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+            "program": "lib/LoginAndSignUp.dart" // 
         }
     ]
 }
