@@ -22,8 +22,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
 
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController =TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   bool isPasswordVisible = false;
