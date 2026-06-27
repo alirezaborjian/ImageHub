@@ -65,7 +65,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: widget.images.isEmpty ? 
+      const Center(
+        child: Text(
+          'No images available.\nYour gallery is empty!',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      )
+      : Padding(
         padding: const EdgeInsets.all(10.0),
         child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -201,31 +213,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-final List<ImageMock> dummyImages = [
-  ImageMock(
-    name: 'Beautiful Nature',
-    caption: 'A fresh morning inside the deep woods and green trees.',
-    imageUrl: 'https://picsum.photos/id/10/400/600',
-    likes: 145,
-    tags: ['nature', 'forest', 'travel'],
-    comments: [],
-  ),
-  ImageMock(
-    name: 'Mountain Trekking',
-    caption: 'Amazing snowy peaks under the clear blue sky.',
-    imageUrl: 'https://picsum.photos/id/29/400/500',
-    likes: 92,
-    tags: ['mountain', 'snow', 'adventure'],
-    comments: [
-      CommentMock(userName: 'Reza', text: 'Stunning capture!'),
-    ],
-  ),
-  ImageMock(
-    name: 'Ocean Waves',
-    caption: 'Calm ocean waves touching the sandy shores at sunset.',
-    imageUrl: 'https://picsum.photos/id/37/400/500',
-    likes: 210,
-    tags: ['beach', 'sunset', 'sea'],
-    comments: [],
-  ),
-];
