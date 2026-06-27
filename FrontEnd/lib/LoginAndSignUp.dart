@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-
+import 'HomeScreen.dart';
 void main() {
   runApp(
     const MaterialApp(
@@ -58,6 +58,12 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Welcome!')));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(images: []),
+          ),
+        );
       } else {
         if (password != _confirmPasswordController.text) {
           ScaffoldMessenger.of(context).showSnackBar(
