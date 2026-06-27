@@ -40,13 +40,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
           'Image Gallery',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.white.withOpacity(0.85),
         elevation: 0.5,
         centerTitle: true,
         actions: [
@@ -56,34 +56,32 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: widget.images.isEmpty
-          ? const Center(
-              child: Text(
-                'No images available.\nYour gallery is empty!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.7,
-                ),
-                itemCount: widget.images.length,
-                itemBuilder: (context, index) {
-                  final imageItem = widget.images[index];
-                  return _buildImageCard(imageItem);
-                },
-              ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background_2.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(top: kToolbarHeight + 20, left: 10, right: 10, bottom: 10),
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.7,
             ),
+            itemCount: widget.images.length,
+            itemBuilder: (context, index) {
+              final imageItem = widget.images[index];
+              return _buildImageCard(imageItem);
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -94,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -126,10 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   item.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -159,39 +154,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         children: [
                           Icon(
-                            item.isLikedByMe
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: item.isLikedByMe
-                                ? Colors.red
-                                : Colors.grey[600],
+                            item.isLikedByMe ? Icons.favorite : Icons.favorite_border,
+                            color: item.isLikedByMe ? Colors.red : Colors.grey[600],
                             size: 18,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${item.likes}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[700],
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                           ),
                         ],
                       ),
                     ),
                     Row(
                       children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
+                        Icon(Icons.chat_bubble_outline, size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
                           '${item.comments.length}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[700],
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                         ),
                       ],
                     ),
