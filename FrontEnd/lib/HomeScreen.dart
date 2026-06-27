@@ -4,10 +4,7 @@ class CommentMock {
   final String userName;
   final String text;
 
-  CommentMock({
-    required this.userName,
-    required this.text,
-  });
+  CommentMock({required this.userName, required this.text});
 }
 
 class ImageMock {
@@ -33,10 +30,7 @@ class ImageMock {
 class HomeScreen extends StatefulWidget {
   final List<ImageMock> images;
 
-  const HomeScreen({
-    super.key,
-    required this.images,
-  });
+  const HomeScreen({super.key, required this.images});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -50,10 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text(
           'Image Gallery',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -65,34 +56,34 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: widget.images.isEmpty ? 
-      const Center(
-        child: Text(
-          'No images available.\nYour gallery is empty!',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      )
-      : Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.7,
-          ),
-          itemCount: widget.images.length,
-          itemBuilder: (context, index) {
-            final imageItem = widget.images[index];
-            return _buildImageCard(imageItem);
-          },
-        ),
-      ),
+      body: widget.images.isEmpty
+          ? const Center(
+              child: Text(
+                'No images available.\nYour gallery is empty!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: widget.images.length,
+                itemBuilder: (context, index) {
+                  final imageItem = widget.images[index];
+                  return _buildImageCard(imageItem);
+                },
+              ),
+            ),
     );
   }
 
@@ -127,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
-          ), 
+          ),
           Padding(
             padding: const EdgeInsets.all(10.0),
             child: Column(
@@ -145,10 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   item.caption,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -171,8 +159,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         children: [
                           Icon(
-                            item.isLikedByMe ? Icons.favorite : Icons.favorite_border,
-                            color: item.isLikedByMe ? Colors.red : Colors.grey[600],
+                            item.isLikedByMe
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: item.isLikedByMe
+                                ? Colors.red
+                                : Colors.grey[600],
                             size: 18,
                           ),
                           const SizedBox(width: 4),
@@ -199,17 +191,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[700],
-                            ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 }

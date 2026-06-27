@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'HomeScreen.dart';
+
 void main() {
   runApp(
     const MaterialApp(
@@ -22,7 +23,8 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
 
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   bool isPasswordVisible = false;
@@ -60,9 +62,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
         ).showSnackBar(const SnackBar(content: Text('Welcome!')));
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => HomeScreen(images: []),
-          ),
+          MaterialPageRoute(builder: (context) => HomeScreen(images: [])),
         );
       } else {
         if (password != _confirmPasswordController.text) {
