@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'UploadScreen.dart';
 
 class CommentMock {
   final String userName;
@@ -76,6 +77,24 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
+        child: const Icon(Icons.add_a_photo, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UploadScreen(
+                onImageUploaded: (newImage) {
+                  setState(() {
+                    widget.images.add(newImage);
+                  });
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
