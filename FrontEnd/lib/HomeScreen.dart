@@ -59,12 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/background_2.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
+        color: Colors.grey[50], 
         child: Padding(
           padding: const EdgeInsets.only(top: kToolbarHeight + 20, left: 10, right: 10, bottom: 10),
           child: GridView.builder(
