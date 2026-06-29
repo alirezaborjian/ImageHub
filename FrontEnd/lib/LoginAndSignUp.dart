@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-import 'HomeScreen.dart';
+import 'MainWrapper.dart';
 
 void main() {
   runApp(
@@ -23,31 +23,26 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
 
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   bool isPasswordVisible = false;
+
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please Enter Password.';
     }
-
     if (value.length < 8) {
       return 'Password must be at least 8 characters long.';
     }
-
     final pattern = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$');
-
     if (!pattern.hasMatch(value)) {
       return 'The password must contain uppercase, lowercase, and numbers.';
     }
-
     final username = _usernameController.text.trim();
     if (username.isNotEmpty && value.contains(username)) {
       return 'Password must not contain username.';
     }
-
     return null;
   }
 
@@ -57,25 +52,24 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
       final password = _passwordController.text;
 
       if (isLoginMode) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Welcome!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Welcome, $username!')),
+        );
+        
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen(images: [])),
+          MaterialPageRoute(builder: (context) => const MainWrapper()),
         );
       } else {
         if (password != _confirmPasswordController.text) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('The password and its repetition do not match.'),
-            ),
+            const SnackBar(content: Text('The password and its repetition do not match.')),
           );
           return;
         }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('User account created')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User account created')),
+        );
         setState(() {
           isLoginMode = true;
         });
@@ -187,9 +181,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: const Color.fromRGBO(143, 148, 251, 1),
-                          ),
+                          border: Border.all(color: const Color.fromRGBO(143, 148, 251, 1)),
                           boxShadow: const [
                             BoxShadow(
                               color: Color.fromRGBO(143, 148, 251, 1),
@@ -206,13 +198,8 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                                 border: InputBorder.none,
                                 hintText: 'Username',
                                 hintStyle: TextStyle(color: Colors.grey[700]),
-                                prefixIcon: const Icon(
-                                  Icons.person,
-                                  color: Color.fromRGBO(143, 148, 251, 1),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 15,
-                                ),
+                                prefixIcon: const Icon(Icons.person, color: Color.fromRGBO(143, 148, 251, 1)),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 15),
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -221,10 +208,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                                 return null;
                               },
                             ),
-                            const Divider(
-                              color: Color.fromRGBO(143, 148, 251, 1),
-                            ),
-
+                            const Divider(color: Color.fromRGBO(143, 148, 251, 1)),
                             TextFormField(
                               controller: _passwordController,
                               obscureText: !isPasswordVisible,
@@ -232,21 +216,11 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                                 border: InputBorder.none,
                                 hintText: "Password",
                                 hintStyle: TextStyle(color: Colors.grey[700]),
-                                prefixIcon: const Icon(
-                                  Icons.lock,
-                                  color: Color.fromRGBO(143, 148, 251, 1),
-                                ),
+                                prefixIcon: const Icon(Icons.lock, color: Color.fromRGBO(143, 148, 251, 1)),
                                 suffixIcon: IconButton(
                                   icon: Icon(
-                                    isPasswordVisible
-                                        ? Icons.visibility
-                                        : Icons.visibility_off,
-                                    color: const Color.fromRGBO(
-                                      143,
-                                      148,
-                                      251,
-                                      1,
-                                    ),
+                                    isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                    color: const Color.fromRGBO(143, 148, 251, 1),
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -254,17 +228,12 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                                     });
                                   },
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 15,
-                                ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 15),
                               ),
                               validator: _validatePassword,
                             ),
-
                             if (!isLoginMode) ...[
-                              const Divider(
-                                color: Color.fromRGBO(143, 148, 251, 1),
-                              ),
+                              const Divider(color: Color.fromRGBO(143, 148, 251, 1)),
                               TextFormField(
                                 controller: _confirmPasswordController,
                                 obscureText: !isPasswordVisible,
@@ -272,13 +241,8 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                                   border: InputBorder.none,
                                   hintText: "Confirm Password",
                                   hintStyle: TextStyle(color: Colors.grey[700]),
-                                  prefixIcon: const Icon(
-                                    Icons.lock_clock,
-                                    color: Color.fromRGBO(143, 148, 251, 1),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 15,
-                                  ),
+                                  prefixIcon: const Icon(Icons.lock_clock, color: Color.fromRGBO(143, 148, 251, 1)),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -293,7 +257,6 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                       ),
                     ),
                     const SizedBox(height: 30),
-
                     FadeInUp(
                       duration: const Duration(milliseconds: 1900),
                       child: GestureDetector(
@@ -323,7 +286,6 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                       ),
                     ),
                     const SizedBox(height: 25),
-
                     FadeInUp(
                       duration: const Duration(milliseconds: 2000),
                       child: TextButton(
@@ -334,9 +296,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                           });
                         },
                         child: Text(
-                          isLoginMode
-                              ? "Don't have an account? Sign Up"
-                              : "Already have an account? Login",
+                          isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Login",
                           style: const TextStyle(
                             color: Color.fromRGBO(143, 148, 251, 1),
                             fontWeight: FontWeight.bold,

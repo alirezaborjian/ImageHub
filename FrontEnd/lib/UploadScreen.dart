@@ -85,141 +85,158 @@ class _UploadScreenState extends State<UploadScreen> {
           icon: const Icon(Icons.close, color: Colors.black87),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Image Title',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter image title',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    prefixIcon: const Icon(Icons.title),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a title';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'URL of the image',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _urlController,
-                  decoration: InputDecoration(
-                    hintText: 'https://example.com/image.jpg',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    prefixIcon: const Icon(Icons.link),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Caption',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _captionController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'Enter image description',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    prefixIcon: const Icon(Icons.description),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a caption';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Tags',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _tagController,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background_2.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Card(
+              color: Colors.white.withOpacity(0.9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Image Title',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _nameController,
                         decoration: InputDecoration(
-                          hintText: 'Write the tag title.',
+                          hintText: 'Enter image title',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          prefixIcon: const Icon(Icons.title),
                         ),
-                        onFieldSubmitted: (_) => _addTag(),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter a title';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: _addTag, 
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'URL of the image',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-                      child: const Icon(Icons.add, color: Colors.white),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: _tags.map((tag) {
-                    return Chip(
-                      label: Text('#$tag'),
-                      onDeleted: () => _removeTag(tag),
-                      backgroundColor: Colors.blue[50],
-                      deleteIconColor: Colors.blue[900],
-                      labelStyle: TextStyle(color: Colors.blue[900]),
-                      side: BorderSide.none,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 40),
-                GestureDetector(
-                  onTap: _submitUpload,
-                  child: Container(
-                    height: 55,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color.fromRGBO(143, 148, 251, 1),
-                          Color.fromRGBO(143, 148, 251, .6),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _urlController,
+                        decoration: InputDecoration(
+                          hintText: 'https://example.com/image.jpg',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          prefixIcon: const Icon(Icons.link),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Caption',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _captionController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: 'Enter image description',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          prefixIcon: const Icon(Icons.description),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter a caption';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Tags',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _tagController,
+                              decoration: InputDecoration(
+                                hintText: 'Write the tag title.',
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onFieldSubmitted: (_) => _addTag(),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: _addTag, 
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: const Icon(Icons.add, color: Colors.white),
+                          ),
                         ],
                       ),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Image release',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: _tags.map((tag) {
+                          return Chip(
+                            label: Text('#$tag'),
+                            onDeleted: () => _removeTag(tag),
+                            backgroundColor: Colors.blue[50],
+                            deleteIconColor: Colors.blue[900],
+                            labelStyle: TextStyle(color: Colors.blue[900]),
+                            side: BorderSide.none,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 40),
+                      GestureDetector(
+                        onTap: _submitUpload,
+                        child: Container(
+                          height: 55,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color.fromRGBO(143, 148, 251, 1),
+                                Color.fromRGBO(143, 148, 251, .6),
+                              ],
+                            ),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Image release',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ),

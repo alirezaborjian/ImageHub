@@ -217,69 +217,79 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
           ),
         ],
       ),
-      body: widget.album.images.isEmpty
-          ? const Center(
-              child: Text('This album is empty.'),
-            )
-          : GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.75,
-              ),
-              itemCount: widget.album.images.length,
-              itemBuilder: (context, index) {
-                final img = widget.album.images[index];
-                return Stack(
-                  children: [
-                    Card(
-                      clipBehavior: Clip.antiAlias,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: Image.network(img.imageUrl, fit: BoxFit.cover),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background_2.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: widget.album.images.isEmpty
+            ? const Center(
+                child: Text('This album is empty.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+              )
+            : GridView.builder(
+                padding: const EdgeInsets.all(12),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.75,
+                ),
+                itemCount: widget.album.images.length,
+                itemBuilder: (context, index) {
+                  final img = widget.album.images[index];
+                  return Stack(
+                    children: [
+                      Card(
+                        clipBehavior: Clip.antiAlias,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: Image.network(img.imageUrl, fit: BoxFit.cover),
+                              ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              img.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                img.name,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.white.withValues(alpha: 0.9),
-                        radius: 16,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.delete, color: Colors.red, size: 18),
-                          onPressed: () {
-                            widget.onRemoveImage(img);
-                            setState(() {});
-                          },
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: CircleAvatar(
+                          backgroundColor: Colors.white.withOpacity(0.9),
+                          radius: 16,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(Icons.delete, color: Colors.red, size: 18),
+                            onPressed: () {
+                              widget.onRemoveImage(img);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+      ),
     );
   }
 }

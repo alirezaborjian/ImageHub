@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'UploadScreen.dart';
+import 'ImageDetailsScreen.dart';
 
 class CommentMock {
   final String userName;
@@ -50,32 +51,38 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.white.withOpacity(0.85),
         elevation: 0.5,
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black87),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        color: Colors.grey[50], 
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background_2.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
         child: Padding(
           padding: const EdgeInsets.only(top: kToolbarHeight + 20, left: 10, right: 10, bottom: 10),
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.7,
-            ),
-            itemCount: widget.images.length,
-            itemBuilder: (context, index) {
-              final imageItem = widget.images[index];
-              return _buildImageCard(imageItem);
-            },
-          ),
+          child: widget.images.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No images available. Add some!',
+                    style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                )
+              : GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.7,
+                  ),
+                  itemCount: widget.images.length,
+                  itemBuilder: (context, index) {
+                    final imageItem = widget.images[index];
+                    return _buildImageCard(imageItem);
+                  },
+                ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -100,102 +107,115 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildImageCard(ImageMock item) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: SizedBox(
-              width: double.infinity,
-              child: Image.network(
-                item.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.broken_image, color: Colors.grey),
-                  );
-                },
-              ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ImageDetailsScreen(
+              imageItem: item,
+              currentUserName: "currentUser",
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+        ).then((_) => setState(() {}));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SizedBox(
+                width: double.infinity,
+                child: Image.network(
+                  item.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                    );
+                  },
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  item.caption,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (item.isLikedByMe) {
-                            item.likes--;
-                            item.isLikedByMe = false;
-                          } else {
-                            item.likes++;
-                            item.isLikedByMe = true;
-                          }
-                        });
-                      },
-                      child: Row(
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.caption,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            if (item.isLikedByMe) {
+                              item.likes--;
+                              item.isLikedByMe = false;
+                            } else {
+                              item.likes++;
+                              item.isLikedByMe = true;
+                            }
+                          });
+                        },
+                        child: Row(
+                          children: [
+                            Icon(
+                              item.isLikedByMe ? Icons.favorite : Icons.favorite_border,
+                              color: item.isLikedByMe ? Colors.red : Colors.grey[600],
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${item.likes}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
                         children: [
-                          Icon(
-                            item.isLikedByMe ? Icons.favorite : Icons.favorite_border,
-                            color: item.isLikedByMe ? Colors.red : Colors.grey[600],
-                            size: 18,
-                          ),
+                          Icon(Icons.chat_bubble_outline, size: 16, color: Colors.grey[600]),
                           const SizedBox(width: 4),
                           Text(
-                            '${item.likes}',
+                            '${item.comments.length}',
                             style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                           ),
                         ],
                       ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(Icons.chat_bubble_outline, size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${item.comments.length}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
