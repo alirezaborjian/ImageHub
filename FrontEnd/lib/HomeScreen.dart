@@ -31,26 +31,164 @@ class ImageMock {
 
 class HomeScreen extends StatefulWidget {
   final List<ImageMock> images;
+  final String userName;
+  final Function(ImageMock)? onImageDeleted; // ✅ اضافه شد برای حذف عکس
 
-  const HomeScreen({super.key, required this.images});
+  const HomeScreen({
+    super.key, 
+    required this.images,
+    required this.userName,
+    this.onImageDeleted, // ✅ اضافه شد
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late List<ImageMock> allImages;
+  List<ImageMock> filteredImages = [];
+  bool isSearching = false;
+  final TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    allImages = widget.images;
+    filteredImages = List.from(allImages);
+    searchController.addListener(_filterImages);
+  }
+
+  @override
+  void dispose() {
+    searchController.removeListener(_filterImages);
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterImages() {
+    final query = searchController.text.toLowerCase().trim();
+    setState(() {
+      if (query.isEmpty) {
+        filteredImages = List.from(allImages);
+      } else {
+        filteredImages = allImages.where((image) {
+          return image.name.toLowerCase().contains(query) ||
+              image.caption.toLowerCase().contains(query) ||
+              image.tags.any((tag) => tag.toLowerCase().contains(query));
+        }).toList();
+      }
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      isSearching = !isSearching;
+      if (!isSearching) {
+        searchController.clear();
+        filteredImages = List.from(allImages);
+      }
+    });
+  }
+
+  // ✅ متد حذف عکس
+  void _deleteImage(ImageMock image) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Delete Image',
+          style: TextStyle(color: Colors.red),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${image.name}"?',
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              // حذف از لیست اصلی
+              setState(() {
+                allImages.remove(image);
+                filteredImages.remove(image);
+              });
+              
+              // ✅ اگر callback وجود داشت، به والد اطلاع بده
+              if (widget.onImageDeleted != null) {
+                widget.onImageDeleted!(image);
+              }
+              
+              Navigator.pop(context);
+              
+              // نمایش پیام موفقیت
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('"${image.name}" deleted successfully'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
-          'Image Gallery',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-        backgroundColor: Colors.white.withOpacity(0.85),
+        title: isSearching
+            ? TextField(
+                controller: searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Search by name, caption, or tag...',
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  border: InputBorder.none,
+                  filled: true,
+                  fillColor: Colors.white.withAlpha(230),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  suffixIcon: searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            searchController.clear();
+                            _filterImages();
+                          },
+                        )
+                      : null,
+                ),
+                style: const TextStyle(color: Colors.black87),
+              )
+            : const Text(
+                'Image Gallery',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
+        backgroundColor: Colors.white.withAlpha(217),
         elevation: 0.5,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(
+              isSearching ? Icons.close : Icons.search,
+              color: Colors.black87,
+            ),
+            onPressed: _toggleSearch,
+          ),
+        ],
       ),
       body: Container(
         width: double.infinity,
@@ -62,47 +200,72 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.only(top: kToolbarHeight + 20, left: 10, right: 10, bottom: 10),
-          child: widget.images.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No images available. Add some!',
-                    style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                )
-              : GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.7,
-                  ),
-                  itemCount: widget.images.length,
-                  itemBuilder: (context, index) {
-                    final imageItem = widget.images[index];
-                    return _buildImageCard(imageItem);
-                  },
-                ),
+          padding: const EdgeInsets.only(
+            top: kToolbarHeight + 20,
+            left: 10,
+            right: 10,
+            bottom: 10,
+          ),
+          child: _buildBody(),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
-        child: const Icon(Icons.add_a_photo, color: Colors.white),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => UploadScreen(
-                onImageUploaded: (newImage) {
-                  setState(() {
-                    widget.images.add(newImage);
-                  });
-                },
-              ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (allImages.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.photo_library, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No images available',
+              style: TextStyle(color: Colors.grey, fontSize: 18),
             ),
-          );
-        },
+            Text(
+              'Tap the + button to add some!',
+              style: TextStyle(color: Colors.grey, fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (isSearching && searchController.text.isNotEmpty && filteredImages.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'No results found',
+              style: TextStyle(color: Colors.grey[600], fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try searching with a different keyword',
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.7,
       ),
+      itemCount: filteredImages.length,
+      itemBuilder: (context, index) {
+        final imageItem = filteredImages[index];
+        return _buildImageCard(imageItem);
+      },
     );
   }
 
@@ -114,10 +277,12 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(
             builder: (context) => ImageDetailsScreen(
               imageItem: item,
-              currentUserName: "currentUser",
+              currentUserName: widget.userName,
             ),
           ),
-        ).then((_) => setState(() {}));
+        ).then((_) {
+          if (mounted) setState(() {});
+        });
       },
       child: Container(
         decoration: BoxDecoration(
@@ -125,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withAlpha(10),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -140,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 child: Image.network(
                   item.imageUrl,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       color: Colors.grey[200],
@@ -155,16 +320,67 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      // ✅ دکمه ۳ نقطه برای حذف
+                      PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'delete') {
+                            _deleteImage(item);
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Colors.grey,
+                          size: 20,
+                        ),
+                        itemBuilder: (context) => [
+                          const PopupMenuItem<String>(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        offset: const Offset(0, 0),
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     item.caption,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -172,43 +388,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (item.isLikedByMe) {
-                              item.likes--;
-                              item.isLikedByMe = false;
-                            } else {
-                              item.likes++;
-                              item.isLikedByMe = true;
-                            }
-                          });
-                        },
-                        child: Row(
-                          children: [
-                            Icon(
-                              item.isLikedByMe ? Icons.favorite : Icons.favorite_border,
-                              color: item.isLikedByMe ? Colors.red : Colors.grey[600],
-                              size: 18,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${item.likes}',
-                              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.chat_bubble_outline, size: 16, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${item.comments.length}',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                          ),
-                        ],
-                      ),
+                      _buildLikeButton(item),
+                      _buildCommentCounter(item),
                     ],
                   ),
                 ],
@@ -217,6 +398,59 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLikeButton(ImageMock item) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (item.isLikedByMe) {
+            item.likes--;
+            item.isLikedByMe = false;
+          } else {
+            item.likes++;
+            item.isLikedByMe = true;
+          }
+        });
+      },
+      child: Row(
+        children: [
+          Icon(
+            item.isLikedByMe ? Icons.favorite : Icons.favorite_border,
+            color: item.isLikedByMe ? Colors.red : Colors.grey[600],
+            size: 18,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${item.likes}',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[700],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentCounter(ImageMock item) {
+    return Row(
+      children: [
+        Icon(
+          Icons.chat_bubble_outline,
+          size: 16,
+          color: Colors.grey[600],
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${item.comments.length}',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[700],
+          ),
+        ),
+      ],
     );
   }
 }

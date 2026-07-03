@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'MainWrapper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(
-    const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LoginAndSignUp(),
-    ),
-  );
-}
+
 
 class LoginAndSignUp extends StatefulWidget {
   const LoginAndSignUp({super.key});
@@ -46,33 +40,134 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
     return null;
   }
 
-  void _submitForm() {
+  // ✅ متد کمکی برای ذخیره با لاگ
+  Future<void> _saveUserData(String username, String password) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userName', username);
+      await prefs.setString('password', password);
+      await prefs.setBool('isLoggedIn', true);
+      
+      // ✅ بررسی اینکه ذخیره شده یا نه
+      final savedUser = prefs.getString('userName');
+      final savedPass = prefs.getString('password');
+      final savedLogin = prefs.getBool('isLoggedIn');
+      
+      print('✅ ذخیره شد:');
+      print('Username: $savedUser');
+      print('Password: $savedPass');
+      print('isLoggedIn: $savedLogin');
+      
+    } catch (e) {
+      print('❌ خطا در ذخیره: $e');
+    }
+  }
+
+  // ✅ متد کمکی برای خواندن با لاگ
+  Future<Map<String, dynamic>> _getUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final username = prefs.getString('userName') ?? '';
+      final password = prefs.getString('password') ?? '';
+      final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+      
+      print('📖 اطلاعات خوانده شده:');
+      print('Username: $username');
+      print('Password: $password');
+      print('isLoggedIn: $isLoggedIn');
+      
+      return {
+        'username': username,
+        'password': password,
+        'isLoggedIn': isLoggedIn,
+      };
+    } catch (e) {
+      print('❌ خطا در خواندن: $e');
+      return {
+        'username': '',
+        'password': '',
+        'isLoggedIn': false,
+      };
+    }
+  }
+
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final username = _usernameController.text.trim();
       final password = _passwordController.text;
 
       if (isLoginMode) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Welcome, $username!')),
-        );
-        
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainWrapper()),
-        );
+        // ✅ حالت لاگین
+        final userData = await _getUserData();
+        final savedUsername = userData['username'] ?? '';
+        final savedPassword = userData['password'] ?? '';
+
+        print('🔍 مقایسه:');
+        print('ورودی: $username / $password');
+        print('ذخیره: $savedUsername / $savedPassword');
+
+        if (savedUsername.isNotEmpty && 
+            username == savedUsername && 
+            password == savedPassword) {
+          
+          // ذخیره وضعیت لاگین
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('isLoggedIn', true);
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Welcome back, $username!')),
+            );
+            
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainWrapper(userName: username),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Invalid username or password'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       } else {
+        // ✅ حالت ثبت نام
         if (password != _confirmPasswordController.text) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('The password and its repetition do not match.')),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('The password and its repetition do not match.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
           return;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User account created')),
-        );
-        setState(() {
-          isLoginMode = true;
-        });
+        
+        // ذخیره اطلاعات
+        await _saveUserData(username, password);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account created successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MainWrapper(userName: username),
+            ),
+          );
+        }
       }
     }
   }
@@ -292,6 +387,8 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                         onPressed: () {
                           setState(() {
                             isLoginMode = !isLoginMode;
+                            _passwordController.clear();
+                            _confirmPasswordController.clear();
                             _formKey.currentState?.reset();
                           });
                         },
