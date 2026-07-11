@@ -32,13 +32,13 @@ class ImageMock {
 class HomeScreen extends StatefulWidget {
   final List<ImageMock> images;
   final String userName;
-  final Function(ImageMock)? onImageDeleted; // ✅ اضافه شد برای حذف عکس
+  final Function(ImageMock)? onImageDeleted;
 
   const HomeScreen({
     super.key, 
     required this.images,
     required this.userName,
-    this.onImageDeleted, // ✅ اضافه شد
+    this.onImageDeleted,
   });
 
   @override
@@ -58,6 +58,8 @@ class _HomeScreenState extends State<HomeScreen> {
     filteredImages = List.from(allImages);
     searchController.addListener(_filterImages);
   }
+
+  //  پاکسازی 
 
   @override
   void dispose() {
@@ -81,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  //  تغییر حالت جستجو 
   void _toggleSearch() {
     setState(() {
       isSearching = !isSearching;
@@ -91,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // ✅ متد حذف عکس
+  //  حذف تصویر 
   void _deleteImage(ImageMock image) {
     showDialog(
       context: context,
@@ -114,20 +117,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           TextButton(
             onPressed: () {
-              // حذف از لیست اصلی
               setState(() {
                 allImages.remove(image);
                 filteredImages.remove(image);
               });
               
-              // ✅ اگر callback وجود داشت، به والد اطلاع بده
               if (widget.onImageDeleted != null) {
                 widget.onImageDeleted!(image);
               }
               
               Navigator.pop(context);
               
-              // نمایش پیام موفقیت
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('"${image.name}" deleted successfully'),
@@ -145,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // UI 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,6 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  //  ساخت بدنه 
   Widget _buildBody() {
     if (allImages.isEmpty) {
       return const Center(
@@ -269,6 +271,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  //  ساخت کارت تصویر - شامل تصویر، نام، کپشن، لایک و کامنت
+
   Widget _buildImageCard(ImageMock item) {
     return GestureDetector(
       onTap: () {
@@ -300,6 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // تصویر
             Expanded(
               child: SizedBox(
                 width: double.infinity,
@@ -315,6 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+            // اطلاعات پایین کارت
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: Column(
@@ -334,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // ✅ دکمه ۳ نقطه برای حذف
+                      // منوی سه نقطه برای حذف
                       PopupMenuButton<String>(
                         onSelected: (value) {
                           if (value == 'delete') {
@@ -400,6 +406,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  //  دکمه لایک 
 
   Widget _buildLikeButton(ImageMock item) {
     return GestureDetector(

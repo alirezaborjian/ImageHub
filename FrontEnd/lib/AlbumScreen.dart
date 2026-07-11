@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
 import 'ImageDetailsScreen.dart';
-  
 
 class AlbumMock {
   final String title;
-  String coverUrl; // ✅ اضافه شد
+  String coverUrl;
   final List<ImageMock> images;
 
   AlbumMock({
@@ -19,8 +18,8 @@ class AlbumScreen extends StatefulWidget {
   final List<AlbumMock> albums;
   final Function(String) onCreateAlbum;
   final Function(AlbumMock, ImageMock) onRemoveImageFromAlbum;
-  final Function(AlbumMock, String) onUpdateCover; // ✅ برای آپدیت کاور
-  final List<ImageMock> allImages; // ✅ لیست همه عکس‌ها برای انتخاب
+  final Function(AlbumMock, String) onUpdateCover;
+  final List<ImageMock> allImages;
 
   const AlbumScreen({
     super.key,
@@ -43,6 +42,8 @@ class _AlbumScreenState extends State<AlbumScreen> {
     _albumTitleController.dispose();
     super.dispose();
   }
+
+  //   دیالوگ ساخت آلبوم جدید
 
   void _showCreateAlbumDialog() {
     showDialog(
@@ -76,6 +77,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
     );
   }
 
+  //   UI 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,6 +126,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(12),
+                      // نمایش کاور آلبوم 
                       leading: Container(
                         width: 60,
                         height: 60,
@@ -158,6 +161,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                       ),
                       subtitle: Text('${album.images.length} Images'),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      // رفتن به صفحه جزئیات آلبوم
                       onTap: () {
                         Navigator.push(
                           context,
@@ -186,11 +190,14 @@ class _AlbumScreenState extends State<AlbumScreen> {
   }
 }
 
+
+//  صفحه جزئیات آلبوم
+
 class AlbumDetailsScreen extends StatefulWidget {
   final AlbumMock album;
-  final List<ImageMock> allImages; // ✅ لیست همه عکس‌ها
+  final List<ImageMock> allImages;
   final Function(ImageMock) onRemoveImage;
-  final Function(String) onUpdateCover; // ✅ برای آپدیت کاور
+  final Function(String) onUpdateCover;
 
   const AlbumDetailsScreen({
     super.key,
@@ -204,26 +211,26 @@ class AlbumDetailsScreen extends StatefulWidget {
   State<AlbumDetailsScreen> createState() => _AlbumDetailsScreenState();
 }
 
+// UI
+
 class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
   String _sortBy = 'NAME';
-  
-  // ✅ لیست عکس‌های موجود در آلبوم
+
   List<ImageMock> get _albumImages => widget.album.images;
-  
-  // ✅ لیست عکس‌های موجود در گالری که در آلبوم نیستند
+
+  // لیست عکس‌های موجود در گالری که در آلبوم نیستند (برای افزودن)
   List<ImageMock> get _availableImages {
     final albumImageIds = _albumImages.map((e) => e.hashCode).toSet();
     return widget.allImages.where((img) => !albumImageIds.contains(img.hashCode)).toList();
   }
 
+  //  مرتب‌سازی عکس‌ها 
   void _sortImages() {
     setState(() {
       if (_sortBy == 'NAME') {
         _albumImages.sort((a, b) => a.name.compareTo(b.name));
       } else if (_sortBy == 'LIKES') {
         _albumImages.sort((a, b) => b.likes.compareTo(a.likes));
-      } else if (_sortBy == 'DATE') {
-        // اگر تاریخ داشتید
       }
     });
   }
@@ -234,7 +241,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
     _sortImages();
   }
 
-  // ✅ دیالوگ انتخاب کاور آلبوم
+  //  دیالوگ تغییر کاور آلبوم 
   void _showChangeCoverDialog() {
     if (_albumImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -321,7 +328,8 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
     );
   }
 
-  // ✅ دیالوگ افزودن عکس به آلبوم از گالری
+  //  دیالوگ افزودن عکس به آلبوم
+
   void _showAddImagesDialog() {
     if (_availableImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -409,6 +417,8 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
     );
   }
 
+  //   UI داخل هر البوم
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -418,19 +428,16 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
         elevation: 0.5,
         foregroundColor: Colors.black87,
         actions: [
-          // ✅ دکمه تغییر کاور آلبوم
           IconButton(
             icon: const Icon(Icons.photo),
             onPressed: _showChangeCoverDialog,
             tooltip: 'Change Album Cover',
           ),
-          // ✅ دکمه افزودن عکس
           IconButton(
             icon: const Icon(Icons.add_photo_alternate),
             onPressed: _showAddImagesDialog,
             tooltip: 'Add Images from Gallery',
           ),
-          // ✅ دکمه مرتب‌سازی
           PopupMenuButton<String>(
             icon: const Icon(Icons.sort),
             onSelected: (value) {
@@ -499,7 +506,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
     );
   }
 
-  // ✅ ویجت کارت عکس با تمام امکانات HomeScreen
+  //  کارت عکس 
   Widget _buildImageCard(ImageMock item) {
     return GestureDetector(
       onTap: () {
@@ -508,7 +515,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
           MaterialPageRoute(
             builder: (context) => ImageDetailsScreen(
               imageItem: item,
-              currentUserName: 'User', // اسم کاربر رو از Provider بگیر
+              currentUserName: 'User',
             ),
           ),
         ).then((_) {
@@ -531,7 +538,6 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ✅ تصویر
             Expanded(
               child: SizedBox(
                 width: double.infinity,
@@ -547,7 +553,6 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
                 ),
               ),
             ),
-            // ✅ اطلاعات پایین
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: Column(
@@ -567,7 +572,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // ✅ منوی سه نقطه برای حذف از آلبوم
+                      // منوی سه نقطه 
                       PopupMenuButton<String>(
                         onSelected: (value) {
                           if (value == 'remove') {
@@ -653,7 +658,8 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
     );
   }
 
-  // ✅ دکمه لایک (مثل HomeScreen)
+  //  دکمه لایک 
+
   Widget _buildLikeButton(ImageMock item) {
     return GestureDetector(
       onTap: () {
@@ -687,7 +693,8 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
     );
   }
 
-  // ✅ شمارنده کامنت (مثل HomeScreen)
+  //  شمارنده کامنت 
+
   Widget _buildCommentCounter(ImageMock item) {
     return Row(
       children: [
@@ -708,7 +715,8 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
     );
   }
 
-  // ✅ دیالوگ حذف از آلبوم
+  //  متد حذف از آلبوم 
+
   void _showRemoveConfirmation(ImageMock item) {
     showDialog(
       context: context,
@@ -747,7 +755,8 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
     );
   }
 
-  // ✅ دیالوگ حذف دائمی عکس
+  //  متد حذف دائمی 
+
   void _showDeleteConfirmation(ImageMock item) {
     showDialog(
       context: context,
@@ -768,13 +777,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
           ),
           TextButton(
             onPressed: () {
-              // حذف از آلبوم
               widget.onRemoveImage(item);
-              
-              // حذف از گالری اصلی (از طریق callback به MainWrapper)
-              // این کار باید در MainWrapper انجام بشه
-              // برای این کار باید یک callback جدید اضافه کنیم
-              
               setState(() {});
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(

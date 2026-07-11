@@ -7,6 +7,8 @@ void main() {
   runApp(const MyApp());
 }
 
+//      تنظیمات   مسیریابی
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -20,24 +22,33 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto',
       ),
       initialRoute: '/',
+      
+
+      //  مسیرهای ثابت 
+  
       routes: {
         '/': (context) => const LoginAndSignUp(),
         '/home': (context) => const MainWrapper(userName: 'User'),
         '/login': (context) => const LoginAndSignUp(),
-        '/albums': (context) => const MainWrapper(userName: 'User'), // ✅ اضافه شد
+        '/albums': (context) => const MainWrapper(userName: 'User'),
       },
+
+      //  مسیریابی پویا 
       onGenerateRoute: (settings) {
-        // ✅ فقط برای '/' و '/home' مدیریت کن
+        //   بررسی لاگین و هدایت به صفحه مناسب
+  
         if (settings.name == '/' || settings.name == '/home') {
           return MaterialPageRoute(
             builder: (context) => FutureBuilder(
               future: _checkLoginStatus(),
               builder: (context, snapshot) {
+                // در حال بارگذاری - نمایش دایره بارگذاری
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Scaffold(
                     body: Center(child: CircularProgressIndicator()),
                   );
                 }
+                // کاربر لاگین کرده - دریافت اطلاعات و رفتن به صفحه اصلی
                 if (snapshot.data == true) {
                   return FutureBuilder(
                     future: _getUserData(),
@@ -50,17 +61,20 @@ class MyApp extends StatelessWidget {
                       final data = userSnapshot.data;
                       return MainWrapper(
                         userName: data?['userName'] ?? 'User',
-                        initialAvatarUrl: data?['avatarUrl'] ?? '', // ✅ Avatar رو هم ارسال کن
+                        initialAvatarUrl: data?['avatarUrl'] ?? '',
                       );
                     },
                   );
                 }
+                // کاربر لاگین نکرده - رفتن به صفحه لاگین
                 return const LoginAndSignUp();
               },
             ),
           );
         }
-        // ✅ برای /albums هم اگر نیاز باشه
+
+        // 📍 مسیر '/albums' - دریافت اطلاعات و رفتن به صفحه آلبوم‌ها
+
         if (settings.name == '/albums') {
           return MaterialPageRoute(
             builder: (context) => FutureBuilder(
@@ -85,12 +99,14 @@ class MyApp extends StatelessWidget {
     );
   }
 
+  //   خوبررسی وضعیت لاگین   
+
   Future<bool> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('isLoggedIn') ?? false;
   }
 
-  // ✅ متد جدید برای دریافت همه اطلاعات کاربر
+  //  دریافت اطلاعات کاربر
   Future<Map<String, dynamic>> _getUserData() async {
     final prefs = await SharedPreferences.getInstance();
     return {

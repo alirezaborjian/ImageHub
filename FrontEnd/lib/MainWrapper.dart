@@ -8,12 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class MainWrapper extends StatefulWidget {
   final String userName;
-  final String initialAvatarUrl; // ✅ اضافه شد
+  final String initialAvatarUrl;
 
   const MainWrapper({
     super.key, 
     required this.userName,
-    this.initialAvatarUrl = '', // ✅ مقدار پیش‌فرض
+    this.initialAvatarUrl = '',
   });
 
   @override
@@ -27,18 +27,22 @@ class _MainWrapperState extends State<MainWrapper> {
   late String _userName;
   late String _avatarUrl;
 
+  //  تغییر تب فعال (گالری یا آلبوم‌ها)
   void changeTab(int index) {
     setState(() {
       _currentIndex = index;
     });
   }
 
+  //  به‌روزرسانی نام کاربری  
   void _updateUserName(String newName) {
     setState(() {
       _userName = newName;
     });
     _saveUserData();
   }
+
+  // 🖼️ به‌روزرسانی آواتار    
 
   void _updateAvatarUrl(String newAvatar) {
     setState(() {
@@ -47,17 +51,22 @@ class _MainWrapperState extends State<MainWrapper> {
     _saveUserData();
   }
 
+  //  به‌روزرسانی لیست تصاویر
+
   void _updateImages(List<ImageMock> newImages) {
     setState(() {
       _allImages = newImages;
     });
   }
 
+  //  به‌روزرسانی لیست آلبوم‌ها
   void _updateAlbums(List<AlbumMock> newAlbums) {
     setState(() {
       _myAlbums = newAlbums;
     });
   }
+
+  //  ذخیره اطلاعات کاربر  
 
   Future<void> _saveUserData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -69,11 +78,15 @@ class _MainWrapperState extends State<MainWrapper> {
     }
   }
 
+  //  افزودن تصویر جدید به لیست گالری
+
   void _addImage(ImageMock image) {
     setState(() {
       _allImages.add(image);
     });
   }
+
+  //  حذف تصویر از گالری و تمام آلبوم‌ها
 
   void _deleteImage(ImageMock image) {
     setState(() {
@@ -84,11 +97,14 @@ class _MainWrapperState extends State<MainWrapper> {
     });
   }
 
+  //  ساخت آلبوم جدید با عنوان داده شده
   void _createAlbum(String title) {
     setState(() {
       _myAlbums.add(AlbumMock(title: title, images: []));
     });
   }
+
+  //  حذف تصویر از یک آلبوم خاص
 
   void _removeImageFromAlbum(AlbumMock album, ImageMock image) {
     setState(() {
@@ -96,15 +112,26 @@ class _MainWrapperState extends State<MainWrapper> {
     });
   }
 
+  //  تغییر کاور آلبوم
+
+  void _updateAlbumCover(AlbumMock album, String coverUrl) {
+    setState(() {
+      album.coverUrl = coverUrl;
+    });
+  }
+
+
+  //  مقداردهی اولیه 
   @override
   void initState() {
     super.initState();
     _allImages = [];
     _myAlbums = [];
     _userName = widget.userName;
-    _avatarUrl = widget.initialAvatarUrl; // ✅ از پارامتر ورودی استفاده کن
+    _avatarUrl = widget.initialAvatarUrl;
   }
 
+  //   UI
   @override
   Widget build(BuildContext context) {
     return UserProvider(
@@ -117,6 +144,7 @@ class _MainWrapperState extends State<MainWrapper> {
       updateImages: _updateImages,
       updateAlbums: _updateAlbums,
       child: Scaffold(
+
         appBar: AppBar(
           title: const Text('My Gallery'),
           backgroundColor: Colors.white,
@@ -131,11 +159,14 @@ class _MainWrapperState extends State<MainWrapper> {
             ),
           ),
         ),
+        // بدنه - نمایش صفحه بر اساس تب انتخاب شده
         body: _buildCurrentScreen(),
+        // منوی کشویی
         drawer: CustomDrawer(
           onNavigateToHome: () => changeTab(0),
           onNavigateToAlbums: () => changeTab(1),
         ),
+        // نوار پایین با دو تب
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) {
@@ -156,6 +187,7 @@ class _MainWrapperState extends State<MainWrapper> {
             ),
           ],
         ),
+        // دکمه شناور - فقط در تب گالری نمایش داده می‌شود
         floatingActionButton: _currentIndex == 0
             ? FloatingActionButton.extended(
                 backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
@@ -176,34 +208,26 @@ class _MainWrapperState extends State<MainWrapper> {
       ),
     );
   }
+  //  ساخت صفحه بر اساس تب انتخاب شده (گالری یا آلبوم‌ها)
 
-  // در متد _buildCurrentScreen، بخش AlbumScreen رو اصلاح کن:
-
-Widget _buildCurrentScreen() {
-  switch (_currentIndex) {
-    case 0:
-      return HomeScreen(
-        images: _allImages,
-        userName: _userName,
-        onImageDeleted: _deleteImage,
-      );
-    case 1:
-      return AlbumScreen(
-        albums: _myAlbums,
-        allImages: _allImages, // ✅ ارسال لیست همه عکس‌ها
-        onCreateAlbum: _createAlbum,
-        onRemoveImageFromAlbum: _removeImageFromAlbum,
-        onUpdateCover: _updateAlbumCover, // ✅ اضافه شد
-      );
-    default:
-      return Container();
+  Widget _buildCurrentScreen() {
+    switch (_currentIndex) {
+      case 0:
+        return HomeScreen(
+          images: _allImages,
+          userName: _userName,
+          onImageDeleted: _deleteImage,
+        );
+      case 1:
+        return AlbumScreen(
+          albums: _myAlbums,
+          allImages: _allImages,
+          onCreateAlbum: _createAlbum,
+          onRemoveImageFromAlbum: _removeImageFromAlbum,
+          onUpdateCover: _updateAlbumCover,
+        );
+      default:
+        return Container();
+    }
   }
-}
-
-// ✅ متد جدید برای آپدیت کاور آلبوم
-void _updateAlbumCover(AlbumMock album, String coverUrl) {
-  setState(() {
-    album.coverUrl = coverUrl;
-  });
-}
 }

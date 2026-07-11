@@ -15,9 +15,13 @@ class ImageDetailsScreen extends StatefulWidget {
   State<ImageDetailsScreen> createState() => _ImageDetailsScreenState();
 }
 
+//      مدیریت کامنت‌ها و لایک
+
 class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
   final TextEditingController _commentController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  //  پاکسازی کنترلر کامنت در زمان بسته شدن صفحه
 
   @override
   void dispose() {
@@ -25,6 +29,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
     super.dispose();
   }
 
+  //  ارسال کامنت جدید 
   void _submitComment() {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -40,11 +45,14 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
     }
   }
 
+  //   UI
+
   @override
   Widget build(BuildContext context) {
     final item = widget.imageItem;
     return Scaffold(
       backgroundColor: Colors.white,
+      
       appBar: AppBar(
         title: Text(
           item.name,
@@ -57,6 +65,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
         ),
       ),
+      
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -69,6 +78,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
+
               SizedBox(
                 width: double.infinity,
                 height: 300,
@@ -81,6 +91,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                   ),
                 ),
               ),
+              
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Card(
@@ -91,9 +102,13 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+
+                        //  بخش لایک و تعداد کامنت‌ها
+
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            // دکمه لایک
                             GestureDetector(
                               onTap: () {
                                 setState(() {
@@ -120,6 +135,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                                 ],
                               ),
                             ),
+                            // تعداد کامنت‌ها
                             Row(
                               children: [
                                 const Icon(Icons.chat_bubble_outline, size: 24, color: Colors.grey),
@@ -133,6 +149,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
+
                         if (item.caption.isNotEmpty) ...[
                           Text(
                             item.caption,
@@ -140,6 +157,8 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                           ),
                           const SizedBox(height: 12),
                         ],
+
+                        //  نمایش تگ‌ها
                         if (item.tags.isNotEmpty)
                           Wrap(
                             spacing: 8,
@@ -154,12 +173,18 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                               );
                             }).toList(),
                           ),
+                        
                         const Divider(height: 32),
+
+                        //      لیست کامنت‌ها
+
                         const Text(
                           'User Comments',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 12),
+
+                        // اگر کامنتی وجود نداشته باشد - نمایش پیام خالی
                         if (item.comments.isEmpty)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 20),
@@ -171,6 +196,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                             ),
                           )
                         else
+                          // نمایش لیست کامنت‌ها
                           ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -182,6 +208,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    // آواتار حرف اول نام کاربر
                                     CircleAvatar(
                                       backgroundColor: Colors.blue[200],
                                       radius: 18,
@@ -191,6 +218,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                                       ),
                                     ),
                                     const SizedBox(width: 12),
+                                    // نام کاربر و متن کامنت
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,7 +240,10 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                               );
                             },
                           ),
+                        
                         const SizedBox(height: 20),
+
+                        //   افزودن کامنت جدید 
                         Form(
                           key: _formKey,
                           child: Row(

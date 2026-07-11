@@ -53,13 +53,13 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
       final savedPass = prefs.getString('password');
       final savedLogin = prefs.getBool('isLoggedIn');
       
-      print('✅ ذخیره شد:');
+      print('saveed successfully');
       print('Username: $savedUser');
       print('Password: $savedPass');
       print('isLoggedIn: $savedLogin');
       
     } catch (e) {
-      print('❌ خطا در ذخیره: $e');
+      print(' Error for saving : $e');
     }
   }
 
@@ -71,7 +71,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
       final password = prefs.getString('password') ?? '';
       final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
       
-      print('📖 اطلاعات خوانده شده:');
+      print('Readed information :');
       print('Username: $username');
       print('Password: $password');
       print('isLoggedIn: $isLoggedIn');
@@ -82,7 +82,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
         'isLoggedIn': isLoggedIn,
       };
     } catch (e) {
-      print('❌ خطا در خواندن: $e');
+      print('Error for reading: $e');
       return {
         'username': '',
         'password': '',
@@ -102,9 +102,9 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
         final savedUsername = userData['username'] ?? '';
         final savedPassword = userData['password'] ?? '';
 
-        print('🔍 مقایسه:');
-        print('ورودی: $username / $password');
-        print('ذخیره: $savedUsername / $savedPassword');
+        print('🔍 compare:');
+        print('input: $username / $password');
+        print('save: $savedUsername / $savedPassword');
 
         if (savedUsername.isNotEmpty && 
             username == savedUsername && 

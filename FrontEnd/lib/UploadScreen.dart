@@ -13,6 +13,7 @@ class UploadScreen extends StatefulWidget {
   State<UploadScreen> createState() => _UploadScreenState();
 }
 
+//  وضعیت صفحه آپلود - مدیریت فرم، تگ‌ها و ارسال داده
 class _UploadScreenState extends State<UploadScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
@@ -22,6 +23,8 @@ class _UploadScreenState extends State<UploadScreen> {
 
   final List<String> _tags = [];
 
+  //  پاکسازی کنترلرها در زمان بسته شدن صفحه
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -30,6 +33,8 @@ class _UploadScreenState extends State<UploadScreen> {
     _urlController.dispose();
     super.dispose();
   }
+
+  //  افزودن تگ جدید به لیست 
 
   void _addTag() {
     final tagText = _tagController.text.trim();
@@ -41,11 +46,14 @@ class _UploadScreenState extends State<UploadScreen> {
     }
   }
 
+  //  حذف تگ از لیست
   void _removeTag(String tag) {
     setState(() {
       _tags.remove(tag);
     });
   }
+
+  //  ارسال فرم - ساخت ImageMock و ارسال به والد از طریق Callback
 
   void _submitUpload() {
     if (_formKey.currentState!.validate()) {
@@ -69,6 +77,7 @@ class _UploadScreenState extends State<UploadScreen> {
     }
   }
 
+  //  UI 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,6 +116,8 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      //  فیلد عنوان تصویر 
+
                       const Text(
                         'Image Title',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -127,6 +138,8 @@ class _UploadScreenState extends State<UploadScreen> {
                         },
                       ),
                       const SizedBox(height: 20),
+
+                      // 🔗 فیلد URL تصویر 
                       const Text(
                         'URL of the image',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -141,6 +154,9 @@ class _UploadScreenState extends State<UploadScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
+
+                      //  فیلد کپشن تصویر 
+   
                       const Text(
                         'Caption',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -162,6 +178,8 @@ class _UploadScreenState extends State<UploadScreen> {
                         },
                       ),
                       const SizedBox(height: 20),
+
+                      //  بخش تگ‌ها
                       const Text(
                         'Tags',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -208,6 +226,9 @@ class _UploadScreenState extends State<UploadScreen> {
                         }).toList(),
                       ),
                       const SizedBox(height: 40),
+
+                      //  دکمه ارسال 
+
                       GestureDetector(
                         onTap: _submitUpload,
                         child: Container(
