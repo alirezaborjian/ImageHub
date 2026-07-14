@@ -3,15 +3,14 @@ import 'HomeScreen.dart';
 import 'AlbumScreen.dart';
 
 class UserProvider extends InheritedWidget {
-  //   فیلدهای ذخیره‌سازی داده‌ها
   final String userName;
   final String avatarUrl;
-  final List<ImageMock> allImages;
-  final List<AlbumMock> allAlbums;
+  final List<ImageModel> allImages;
+  final List<AlbumModel> allAlbums;
   final Function(String) updateUserName;
   final Function(String) updateAvatarUrl;
-  final Function(List<ImageMock>) updateImages;
-  final Function(List<AlbumMock>) updateAlbums;
+  final Function(List<ImageModel>) updateImages;
+  final Function(List<AlbumModel>) updateAlbums;
 
   const UserProvider({
     super.key,
@@ -25,11 +24,11 @@ class UserProvider extends InheritedWidget {
     required this.updateAlbums,
     required super.child,
   });
-  //  متد دسترسی به Provider - استفاده: UserProvider.of(context)
+
   static UserProvider? of(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<UserProvider>();
   }
-  // تشخیص تغییرات - مشخص میکند ویجت‌های وابسته ری‌بیلد شوند یا نه
+
   @override
   bool updateShouldNotify(UserProvider oldWidget) {
     return userName != oldWidget.userName ||

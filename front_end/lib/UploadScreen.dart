@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
 
 class UploadScreen extends StatefulWidget {
-  final Function(ImageMock) onImageUploaded;
-  
+  final Function(ImageModel) onImageUploaded;
+
   const UploadScreen({
     super.key,
     required this.onImageUploaded,
@@ -23,8 +23,8 @@ class _UploadScreenState extends State<UploadScreen> {
 
   void _pickFromGallery() {
     setState(() {
-      _selectedSourceMessage = "Selected from Gallery (Mocked)";
-      _urlController.text = "https://picsum.photos/id/1025/400/500";
+      _selectedSourceMessage = "Selected from Gallery";
+      _urlController.text = "https://picsum.photos/400/500";
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Image successfully picked from Gallery!')),
@@ -33,27 +33,39 @@ class _UploadScreenState extends State<UploadScreen> {
 
   void _takeWithCamera() {
     setState(() {
-      _selectedSourceMessage = "Captured with Camera (Mocked)";
-      _urlController.text = "https://picsum.photos/id/1011/400/500";
+      _selectedSourceMessage = "Captured with Camera";
+      _urlController.text = "https://picsum.photos/400/500";
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Photo captured successfully with Camera!')),
+      const SnackBar(content: Text('Image successfully captured!')),
     );
   }
 
   void _submitUpload() {
-    if (_formKey.currentState!.validate()) {
-      final newImage = ImageMock(
+    if (_formKey.currentState!.validate() && _urlController.text.isNotEmpty) {
+      final newImage = ImageModel(
         name: _nameController.text.trim(),
         caption: _captionController.text.trim(),
-        imageUrl: _urlController.text.isNotEmpty ? _urlController.text : "https://picsum.photos/id/237/400/500",
+        imageUrl: _urlController.text.trim(),
         likes: 0,
-        tags: ['New'],
+        tags: [],
         comments: [],
       );
       widget.onImageUploaded(newImage);
       Navigator.pop(context);
+    } else if (_urlController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an image source first')),
+      );
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _captionController.dispose();
+    _urlController.dispose();
+    super.dispose();
   }
 
   @override
@@ -61,7 +73,7 @@ class _UploadScreenState extends State<UploadScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Upload Image')),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(

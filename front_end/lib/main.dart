@@ -47,18 +47,8 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Image Gallery',
-        theme: ThemeData(
-          brightness: Brightness.light,
-          primarySwatch: Colors.blue,
-          fontFamily: 'Roboto',
-          scaffoldBackgroundColor: Colors.white,
-        ),
-        darkTheme: ThemeData(
-          brightness: Brightness.dark,
-          primarySwatch: Colors.indigo,
-          fontFamily: 'Roboto',
-          scaffoldBackgroundColor: Colors.grey[900],
-        ),
+        theme: ThemeData.light(),
+        darkTheme: ThemeData.dark(),
         themeMode: _themeMode,
         initialRoute: '/',
         routes: {

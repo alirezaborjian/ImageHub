@@ -11,7 +11,7 @@ class MainWrapper extends StatefulWidget {
   final String initialAvatarUrl;
 
   const MainWrapper({
-    super.key, 
+    super.key,
     required this.userName,
     this.initialAvatarUrl = '',
   });
@@ -22,144 +22,65 @@ class MainWrapper extends StatefulWidget {
 
 class _MainWrapperState extends State<MainWrapper> {
   int _currentIndex = 0;
-  late List<ImageMock> _allImages;
-  late List<AlbumMock> _myAlbums;
+  late List<ImageModel> _allImages;
+  late List<AlbumModel> _myAlbums;
   late String _userName;
   late String _avatarUrl;
-
-  void changeTab(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  void _updateUserName(String newName) {
-    setState(() {
-      _userName = newName;
-    });
-    _saveUserData();
-  }
-
-  void _updateAvatarUrl(String newAvatar) {
-    setState(() {
-      _avatarUrl = newAvatar;
-    });
-    _saveUserData();
-  }
-
-  Future<void> _saveUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('userName', _userName);
-    await prefs.setString('avatarUrl', _avatarUrl);
-  }
 
   @override
   void initState() {
     super.initState();
     _userName = widget.userName;
     _avatarUrl = widget.initialAvatarUrl;
-
-    _allImages = [
-      ImageMock(
-        name: 'Nature sunset',
-        caption: 'A beautiful sunset over the mountains.',
-        imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500',
-        likes: 12,
-        tags: ['Sunset', 'Nature', 'Mountains'],
-        comments: [
-          CommentMock(userName: 'Alice', text: 'Stunning view!'),
-          CommentMock(userName: 'Bob', text: 'Wish I was there.'),
-        ],
-      ),
-      ImageMock(
-        name: 'Ocean breeze',
-        caption: 'Crystal clear water under a sunny sky.',
-        imageUrl: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=500',
-        likes: 24,
-        tags: ['Ocean', 'Beach', 'Summer'],
-        comments: [],
-      ),
-      ImageMock(
-        name: 'Forest trail',
-        caption: 'Walking through the misty pine forest.',
-        imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=500',
-        likes: 8,
-        tags: ['Forest', 'Mist', 'Trees'],
-        comments: [],
-      ),
-    ];
-
-    _myAlbums = [
-      AlbumMock(
-        title: 'Favorites',
-        images: [_allImages[0], _allImages[1]],
-        coverUrl: _allImages[0].imageUrl,
-      ),
-      AlbumMock(
-        title: 'Trip 2024',
-        images: [_allImages[2]],
-        coverUrl: _allImages[2].imageUrl,
-      ),
-    ];
+    _allImages = [];
+    _myAlbums = [];
   }
 
-  void _addImage(ImageMock newImage) {
+  void _addImage(ImageModel newImg) {
     setState(() {
-      _allImages.add(newImage);
+      _allImages.add(newImg);
     });
   }
 
-  void _deleteImage(ImageMock item) {
+  void _deleteImage(ImageModel img) {
     setState(() {
-      _allImages.remove(item);
+      _allImages.remove(img);
       for (var album in _myAlbums) {
-        album.images.remove(item);
-        if (album.coverUrl == item.imageUrl) {
-          album.coverUrl = album.images.isNotEmpty ? album.images.first.imageUrl : '';
-        }
+        album.images.remove(img);
       }
     });
   }
 
   void _createAlbum(String title) {
     setState(() {
-      _myAlbums.add(AlbumMock(title: title, images: [], coverUrl: ''));
+      _myAlbums.add(AlbumModel(title: title, images: []));
     });
   }
 
-  void _deleteWholeAlbum(AlbumMock album) {
+  void _removeImageFromAlbum(AlbumModel album, ImageModel img) {
+    setState(() {
+      album.images.remove(img);
+    });
+  }
+
+  void _updateAlbumCover(AlbumModel album, String url) {
+    setState(() {
+      album.coverUrl = url;
+    });
+  }
+
+  void _deleteWholeAlbum(AlbumModel album) {
     setState(() {
       _myAlbums.remove(album);
     });
   }
 
-  void _removeImageFromAlbum(AlbumMock album, ImageMock image) {
+  void _moveImageToAnotherAlbum(AlbumModel from, AlbumModel to, ImageModel img) {
     setState(() {
-      album.images.remove(image);
-      if (album.coverUrl == image.imageUrl) {
-        album.coverUrl = album.images.isNotEmpty ? album.images.first.imageUrl : '';
+      from.images.remove(img);
+      if (!to.images.contains(img)) {
+        to.images.add(img);
       }
-    });
-  }
-
-  void _moveImageToAnotherAlbum(AlbumMock sourceAlbum, AlbumMock targetAlbum, ImageMock image) {
-    setState(() {
-      sourceAlbum.images.remove(image);
-      if (sourceAlbum.coverUrl == image.imageUrl) {
-        sourceAlbum.coverUrl = sourceAlbum.images.isNotEmpty ? sourceAlbum.images.first.imageUrl : '';
-      }
-      if (!targetAlbum.images.contains(image)) {
-        targetAlbum.images.add(image);
-        if (targetAlbum.coverUrl.isEmpty) {
-          targetAlbum.coverUrl = image.imageUrl;
-        }
-      }
-    });
-  }
-
-  void _updateAlbumCover(AlbumMock album, String url) {
-    setState(() {
-      album.coverUrl = url;
     });
   }
 
@@ -170,31 +91,19 @@ class _MainWrapperState extends State<MainWrapper> {
       avatarUrl: _avatarUrl,
       allImages: _allImages,
       allAlbums: _myAlbums,
-      updateUserName: _updateUserName,
-      updateAvatarUrl: _updateAvatarUrl,
+      updateUserName: (name) => setState(() => _userName = name),
+      updateAvatarUrl: (url) => setState(() => _avatarUrl = url),
       updateImages: (images) => setState(() => _allImages = images),
       updateAlbums: (albums) => setState(() => _myAlbums = albums),
       child: Scaffold(
+        appBar: AppBar(title: Text(_currentIndex == 0 ? 'Gallery' : 'Albums')),
         drawer: const CustomDrawer(),
-        appBar: AppBar(
-          title: Text(_currentIndex == 0 ? 'Gallery' : 'My Albums'),
-          backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
-          foregroundColor: Colors.white,
-        ),
-        body: _buildCurrentScreen(),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: changeTab,
-          selectedItemColor: const Color.fromRGBO(143, 148, 251, 1),
+          onTap: (index) => setState(() => _currentIndex = index),
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.photo_library),
-              label: 'Gallery',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.collections_bookmark),
-              label: 'Albums',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.photo), label: 'Gallery'),
+            BottomNavigationBarItem(icon: Icon(Icons.collections_bookmark), label: 'Albums'),
           ],
         ),
         floatingActionButton: _currentIndex == 0
@@ -206,38 +115,28 @@ class _MainWrapperState extends State<MainWrapper> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => UploadScreen(
-                        onImageUploaded: _addImage,
-                      ),
+                      builder: (context) => UploadScreen(onImageUploaded: _addImage),
                     ),
                   );
                 },
               )
             : null,
+        body: IndexedStack(
+          index: _currentIndex,
+          children: [
+            HomeScreen(images: _allImages, userName: _userName, onImageDeleted: _deleteImage),
+            AlbumScreen(
+              albums: _myAlbums,
+              allImages: _allImages,
+              onCreateAlbum: _createAlbum,
+              onRemoveImageFromAlbum: _removeImageFromAlbum,
+              onUpdateCover: _updateAlbumCover,
+              onDeleteAlbum: _deleteWholeAlbum,
+              onMoveImageToAnotherAlbum: _moveImageToAnotherAlbum,
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  Widget _buildCurrentScreen() {
-    switch (_currentIndex) {
-      case 0:
-        return HomeScreen(
-          images: _allImages,
-          userName: _userName,
-          onImageDeleted: _deleteImage,
-        );
-      case 1:
-        return AlbumScreen(
-          albums: _myAlbums,
-          allImages: _allImages,
-          onCreateAlbum: _createAlbum,
-          onRemoveImageFromAlbum: _removeImageFromAlbum,
-          onUpdateCover: _updateAlbumCover,
-          onDeleteAlbum: _deleteWholeAlbum,
-          onMoveImageToAnotherAlbum: _moveImageToAnotherAlbum,
-        );
-      default:
-        return Container();
-    }
   }
 }

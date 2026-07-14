@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
 import 'UploadScreen.dart';
 
-class AlbumMock {
+class AlbumModel {
   final String title;
   String coverUrl;
-  final List<ImageMock> images;
+  final List<ImageModel> images;
 
-  AlbumMock({
+  AlbumModel({
     required this.title,
     required this.images,
     this.coverUrl = '',
@@ -15,13 +15,13 @@ class AlbumMock {
 }
 
 class AlbumScreen extends StatefulWidget {
-  final List<AlbumMock> albums;
+  final List<AlbumModel> albums;
   final Function(String) onCreateAlbum;
-  final Function(AlbumMock, ImageMock) onRemoveImageFromAlbum;
-  final Function(AlbumMock, String) onUpdateCover;
-  final Function(AlbumMock) onDeleteAlbum;
-  final Function(AlbumMock, AlbumMock, ImageMock) onMoveImageToAnotherAlbum;
-  final List<ImageMock> allImages;
+  final Function(AlbumModel, ImageModel) onRemoveImageFromAlbum;
+  final Function(AlbumModel, String) onUpdateCover;
+  final Function(AlbumModel) onDeleteAlbum;
+  final Function(AlbumModel, AlbumModel, ImageModel) onMoveImageToAnotherAlbum;
+  final List<ImageModel> allImages;
 
   const AlbumScreen({
     super.key,
@@ -41,100 +41,66 @@ class AlbumScreen extends StatefulWidget {
 class _AlbumScreenState extends State<AlbumScreen> {
   final TextEditingController _albumTitleController = TextEditingController();
 
-  void _showCreateAlbumDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create New Album'),
-        content: TextField(
-          controller: _albumTitleController,
-          decoration: const InputDecoration(labelText: 'Album Title'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              final title = _albumTitleController.text.trim();
-              if (title.isNotEmpty) {
-                widget.onCreateAlbum(title);
-                _albumTitleController.clear();
-                Navigator.pop(context);
-                setState(() {});
-              }
-            },
-            child: const Text('Create'),
-          )
-        ],
-      ),
-    );
+  @override
+  void dispose() {
+    _albumTitleController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: widget.albums.isEmpty
-          ? const Center(child: Text('No albums created yet.'))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
+          ? const Center(child: Text('No albums created yet'))
+          : GridView.builder(
+              padding: const EdgeInsets.all(8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
               itemCount: widget.albums.length,
               itemBuilder: (context, index) {
                 final album = widget.albums[index];
-                return Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.folder),
-                    title: Text(album.title),
-                    subtitle: Text('${album.images.length} Photos'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        widget.onDeleteAlbum(album);
-                        setState(() {});
-                      },
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AlbumDetailsScreen(
-                            album: album,
-                            allAlbums: widget.albums,
-                            onRemoveImageFromAlbum: (img) => widget.onRemoveImageFromAlbum(album, img),
-                            onMoveImage: (target, img) => widget.onMoveImageToAnotherAlbum(album, target, img),
-                            onSetCover: (url) => widget.onUpdateCover(album, url),
-                            allImages: widget.allImages,
-                          ),
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AlbumDetailsScreen(
+                          album: album,
+                          allImages: widget.allImages,
                         ),
-                      ).then((_) => setState(() {}));
-                    },
+                      ),
+                    );
+                  },
+                  child: Card(
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: album.coverUrl.isNotEmpty
+                              ? Image.network(album.coverUrl, fit: BoxFit.cover)
+                              : const Icon(Icons.collections, size: 50),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(album.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateAlbumDialog,
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }
 
 class AlbumDetailsScreen extends StatefulWidget {
-  final AlbumMock album;
-  final List<AlbumMock> allAlbums;
-  final Function(ImageMock) onRemoveImageFromAlbum;
-  final Function(AlbumMock, ImageMock) onMoveImage;
-  final Function(String) onSetCover;
-  final List<ImageMock> allImages;
+  final AlbumModel album;
+  final List<ImageModel> allImages;
 
-  const AlbumDetailsScreen({
-    super.key,
-    required this.album,
-    required this.allAlbums,
-    required this.onRemoveImageFromAlbum,
-    required this.onMoveImage,
-    required this.onSetCover,
-    required this.allImages,
-  });
+  const AlbumDetailsScreen({super.key, required this.album, required this.allImages});
 
   @override
   State<AlbumDetailsScreen> createState() => _AlbumDetailsScreenState();

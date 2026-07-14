@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:animate_do/animate_do.dart';
 import 'MainWrapper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,56 +39,15 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final username = _usernameController.text.trim();
-      final password = _passwordController.text;
       final prefs = await SharedPreferences.getInstance();
-
-      if (isLoginMode) {
-        final isBanned = prefs.getBool('banned_$username') ?? false;
-        if (isBanned) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Your account has been banned by the admin!'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return;
-        }
-
-        final savedPassword = prefs.getString('pass_$username');
-        
-        if (savedPassword == null) {
-          await prefs.setString('pass_$username', password);
-          await prefs.setString('userName', username);
-          await prefs.setBool('isLoggedIn', true);
-        } else if (savedPassword != password) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Incorrect password! This is not your password.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return;
-        }
-
-        await prefs.setString('userName', username);
-        await prefs.setBool('isLoggedIn', true);
-      } else {
-        if (password != _confirmPasswordController.text) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Passwords do not match!'), backgroundColor: Colors.red),
-          );
-          return;
-        }
-        await prefs.setString('pass_$username', password);
-        await prefs.setString('userName', username);
-        await prefs.setBool('isLoggedIn', true);
-      }
-
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('userName', _usernameController.text.trim());
+      
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => MainWrapper(userName: username),
+          builder: (context) => MainWrapper(userName: _usernameController.text.trim()),
         ),
       );
     }
@@ -98,63 +56,75 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              const SizedBox(height: 100),
-              Text(
-                isLoginMode ? "Welcome Back" : "Create Account",
-                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(30.0),
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _usernameController,
-                      decoration: const InputDecoration(labelText: "Username"),
-                      validator: (v) => v!.isEmpty ? "Enter username" : null,
-                    ),
-                    const SizedBox(height: 15),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: !isPasswordVisible,
-                      decoration: InputDecoration(
-                        labelText: "Password",
-                        suffixIcon: IconButton(
-                          icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                          onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
-                        ),
-                      ),
-                      validator: _validatePassword,
-                    ),
-                    if (!isLoginMode) ...[
-                      const SizedBox(height: 15),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(labelText: "Confirm Password"),
-                      ),
-                    ],
-                    const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
-                      ),
-                      child: Text(isLoginMode ? "Login" : "Sign Up", style: const TextStyle(color: Colors.white)),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(() => isLoginMode = !isLoginMode),
-                      child: Text(isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Login"),
-                    )
-                  ],
+      backgroundColor: const Color.fromRGBO(30, 30, 40, 1),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    labelText: "Username",
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
+                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                  validator: (v) => v!.isEmpty ? 'Enter username' : null,
                 ),
-              )
-            ],
+                const SizedBox(height: 15),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: !isPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
+                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                    suffixIcon: IconButton(
+                      icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.white70),
+                      onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
+                    ),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                  validator: _validatePassword,
+                ),
+                if (!isLoginMode) ...[
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: "Confirm Password",
+                      labelStyle: TextStyle(color: Colors.white70),
+                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ],
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: _submitForm,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
+                  ),
+                  child: Text(isLoginMode ? "Login" : "Sign Up", style: const TextStyle(color: Colors.white)),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => isLoginMode = !isLoginMode),
+                  child: Text(
+                    isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Login",
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),
