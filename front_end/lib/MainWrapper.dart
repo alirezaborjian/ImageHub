@@ -27,22 +27,18 @@ class _MainWrapperState extends State<MainWrapper> {
   late String _userName;
   late String _avatarUrl;
 
-  //  تغییر تب فعال (گالری یا آلبوم‌ها)
   void changeTab(int index) {
     setState(() {
       _currentIndex = index;
     });
   }
 
-  //  به‌روزرسانی نام کاربری  
   void _updateUserName(String newName) {
     setState(() {
       _userName = newName;
     });
     _saveUserData();
   }
-
-  // 🖼️ به‌روزرسانی آواتار    
 
   void _updateAvatarUrl(String newAvatar) {
     setState(() {
@@ -51,87 +47,122 @@ class _MainWrapperState extends State<MainWrapper> {
     _saveUserData();
   }
 
-  //  به‌روزرسانی لیست تصاویر
-
-  void _updateImages(List<ImageMock> newImages) {
-    setState(() {
-      _allImages = newImages;
-    });
-  }
-
-  //  به‌روزرسانی لیست آلبوم‌ها
-  void _updateAlbums(List<AlbumMock> newAlbums) {
-    setState(() {
-      _myAlbums = newAlbums;
-    });
-  }
-
-  //  ذخیره اطلاعات کاربر  
-
   Future<void> _saveUserData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('userName', _userName);
-    if (_avatarUrl.isNotEmpty) {
-      await prefs.setString('avatarUrl', _avatarUrl);
-    } else {
-      await prefs.remove('avatarUrl');
-    }
+    await prefs.setString('avatarUrl', _avatarUrl);
   }
 
-  //  افزودن تصویر جدید به لیست گالری
+  @override
+  void initState() {
+    super.initState();
+    _userName = widget.userName;
+    _avatarUrl = widget.initialAvatarUrl;
 
-  void _addImage(ImageMock image) {
+    _allImages = [
+      ImageMock(
+        name: 'Nature sunset',
+        caption: 'A beautiful sunset over the mountains.',
+        imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500',
+        likes: 12,
+        tags: ['Sunset', 'Nature', 'Mountains'],
+        comments: [
+          CommentMock(userName: 'Alice', text: 'Stunning view!'),
+          CommentMock(userName: 'Bob', text: 'Wish I was there.'),
+        ],
+      ),
+      ImageMock(
+        name: 'Ocean breeze',
+        caption: 'Crystal clear water under a sunny sky.',
+        imageUrl: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=500',
+        likes: 24,
+        tags: ['Ocean', 'Beach', 'Summer'],
+        comments: [],
+      ),
+      ImageMock(
+        name: 'Forest trail',
+        caption: 'Walking through the misty pine forest.',
+        imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=500',
+        likes: 8,
+        tags: ['Forest', 'Mist', 'Trees'],
+        comments: [],
+      ),
+    ];
+
+    _myAlbums = [
+      AlbumMock(
+        title: 'Favorites',
+        images: [_allImages[0], _allImages[1]],
+        coverUrl: _allImages[0].imageUrl,
+      ),
+      AlbumMock(
+        title: 'Trip 2024',
+        images: [_allImages[2]],
+        coverUrl: _allImages[2].imageUrl,
+      ),
+    ];
+  }
+
+  void _addImage(ImageMock newImage) {
     setState(() {
-      _allImages.add(image);
+      _allImages.add(newImage);
     });
   }
 
-  //  حذف تصویر از گالری و تمام آلبوم‌ها
-
-  void _deleteImage(ImageMock image) {
+  void _deleteImage(ImageMock item) {
     setState(() {
-      _allImages.remove(image);
+      _allImages.remove(item);
       for (var album in _myAlbums) {
-        album.images.remove(image);
+        album.images.remove(item);
+        if (album.coverUrl == item.imageUrl) {
+          album.coverUrl = album.images.isNotEmpty ? album.images.first.imageUrl : '';
+        }
       }
     });
   }
 
-  //  ساخت آلبوم جدید با عنوان داده شده
   void _createAlbum(String title) {
     setState(() {
-      _myAlbums.add(AlbumMock(title: title, images: []));
+      _myAlbums.add(AlbumMock(title: title, images: [], coverUrl: ''));
     });
   }
 
-  //  حذف تصویر از یک آلبوم خاص
+  void _deleteWholeAlbum(AlbumMock album) {
+    setState(() {
+      _myAlbums.remove(album);
+    });
+  }
 
   void _removeImageFromAlbum(AlbumMock album, ImageMock image) {
     setState(() {
       album.images.remove(image);
+      if (album.coverUrl == image.imageUrl) {
+        album.coverUrl = album.images.isNotEmpty ? album.images.first.imageUrl : '';
+      }
     });
   }
 
-  //  تغییر کاور آلبوم
-
-  void _updateAlbumCover(AlbumMock album, String coverUrl) {
+  void _moveImageToAnotherAlbum(AlbumMock sourceAlbum, AlbumMock targetAlbum, ImageMock image) {
     setState(() {
-      album.coverUrl = coverUrl;
+      sourceAlbum.images.remove(image);
+      if (sourceAlbum.coverUrl == image.imageUrl) {
+        sourceAlbum.coverUrl = sourceAlbum.images.isNotEmpty ? sourceAlbum.images.first.imageUrl : '';
+      }
+      if (!targetAlbum.images.contains(image)) {
+        targetAlbum.images.add(image);
+        if (targetAlbum.coverUrl.isEmpty) {
+          targetAlbum.coverUrl = image.imageUrl;
+        }
+      }
     });
   }
 
-
-  //  مقداردهی اولیه 
-  @override
-  void initState() {
-    super.initState();
-    _allImages = [];
-    _myAlbums = [];
-    _userName = widget.userName;
-    _avatarUrl = widget.initialAvatarUrl;
+  void _updateAlbumCover(AlbumMock album, String url) {
+    setState(() {
+      album.coverUrl = url;
+    });
   }
 
-  //   UI
   @override
   Widget build(BuildContext context) {
     return UserProvider(
@@ -141,41 +172,20 @@ class _MainWrapperState extends State<MainWrapper> {
       allAlbums: _myAlbums,
       updateUserName: _updateUserName,
       updateAvatarUrl: _updateAvatarUrl,
-      updateImages: _updateImages,
-      updateAlbums: _updateAlbums,
+      updateImages: (images) => setState(() => _allImages = images),
+      updateAlbums: (albums) => setState(() => _myAlbums = albums),
       child: Scaffold(
-
+        drawer: const CustomDrawer(),
         appBar: AppBar(
-          title: const Text('My Gallery'),
-          backgroundColor: Colors.white,
-          elevation: 0.5,
-          foregroundColor: Colors.black87,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            ),
-          ),
+          title: Text(_currentIndex == 0 ? 'Gallery' : 'My Albums'),
+          backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
+          foregroundColor: Colors.white,
         ),
-        // بدنه - نمایش صفحه بر اساس تب انتخاب شده
         body: _buildCurrentScreen(),
-        // منوی کشویی
-        drawer: CustomDrawer(
-          onNavigateToHome: () => changeTab(0),
-          onNavigateToAlbums: () => changeTab(1),
-        ),
-        // نوار پایین با دو تب
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
+          onTap: changeTab,
           selectedItemColor: const Color.fromRGBO(143, 148, 251, 1),
-          unselectedItemColor: Colors.grey,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.photo_library),
@@ -187,7 +197,6 @@ class _MainWrapperState extends State<MainWrapper> {
             ),
           ],
         ),
-        // دکمه شناور - فقط در تب گالری نمایش داده می‌شود
         floatingActionButton: _currentIndex == 0
             ? FloatingActionButton.extended(
                 backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
@@ -208,7 +217,6 @@ class _MainWrapperState extends State<MainWrapper> {
       ),
     );
   }
-  //  ساخت صفحه بر اساس تب انتخاب شده (گالری یا آلبوم‌ها)
 
   Widget _buildCurrentScreen() {
     switch (_currentIndex) {
@@ -225,6 +233,8 @@ class _MainWrapperState extends State<MainWrapper> {
           onCreateAlbum: _createAlbum,
           onRemoveImageFromAlbum: _removeImageFromAlbum,
           onUpdateCover: _updateAlbumCover,
+          onDeleteAlbum: _deleteWholeAlbum,
+          onMoveImageToAnotherAlbum: _moveImageToAnotherAlbum,
         );
       default:
         return Container();
