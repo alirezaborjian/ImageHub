@@ -4,13 +4,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import model.Album;
 import model.User;
 import model.Image;
 
 public class AlbumService {
-    public List<Image> images = new ArrayList<>();
+    private List<Image> allImages;
 
     public enum SortBy {
         NAME,
@@ -18,7 +17,14 @@ public class AlbumService {
         LIKES
     }
 
-    public Album creatAlbum(User user, String title) {
+    public AlbumService(List<Image> allImages) {
+        this.allImages = allImages;
+    }
+
+    public Album createAlbum(User user, String title) {
+        boolean exists = user.getAlbums().stream().anyMatch(a -> a.getTitle().equalsIgnoreCase(title));
+        if (exists) return null;
+
         Album album = new Album(title);
         user.addAlbum(album);
         return album;
@@ -28,50 +34,38 @@ public class AlbumService {
         user.getAlbums().remove(album);
     }
 
-
-    public void addImage(Image image) {
-        images.add(image);
-    }
-
-    public void removeImage(Image image) {
-        images.remove(image);
-    }
-
-    public List<Image> sortImages(SortBy sortBy) {
+    public List<Image> sortImages(List<Image> imagesToSort, SortBy sortBy) {
         Comparator<Image> comparator;
 
         switch (sortBy) {
             case NAME:
                 comparator = Comparator.comparing(Image::getName);
                 break;
-
             case DATE:
                 comparator = Comparator.comparing(Image::getUploadDate).reversed();
                 break;
-
             case LIKES:
                 comparator = Comparator.comparingInt(Image::getLikes).reversed();
                 break;
-
             default:
                 comparator = Comparator.comparing(Image::getName);
         }
 
-        return images.stream()
+        return imagesToSort.stream()
                 .sorted(comparator)
                 .collect(Collectors.toList());
     }
 
-
-    public void moveImageOtherAlbum(Image image, Album NewAlbum) {
-        boolean isRemoved = this.images.remove(image); 
-
-        if (isRemoved) {
-            NewAlbum.addImage(image);
-            System.out.println("Successfully moved.");
-        } else {
-            System.out.println("Error.");
+    public boolean moveImageOtherAlbum(Album sourceAlbum, Album targetAlbum, Image image) {
+        if (sourceAlbum == null || targetAlbum == null || image == null) {
+            return false;
         }
+        
+        if (sourceAlbum.getImages().contains(image)) {
+            sourceAlbum.removeImage(image);
+            targetAlbum.addImage(image);
+            return true;
+        }
+        return false;
     }
-
 }

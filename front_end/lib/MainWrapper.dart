@@ -4,6 +4,7 @@ import 'AlbumScreen.dart';
 import 'UploadScreen.dart';
 import 'CustomDrawer.dart';
 import 'UserProvider.dart';
+import 'SocketService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MainWrapper extends StatefulWidget {
@@ -42,30 +43,26 @@ class _MainWrapperState extends State<MainWrapper> {
     });
   }
 
-  void _deleteImage(ImageModel img) {
-    setState(() {
-      _allImages.remove(img);
-      for (var album in _myAlbums) {
-        album.images.remove(img);
-      }
+  void _deleteImage(ImageModel img) async {
+    final response = await SocketService().sendRequest({
+      'action': 'deleteImage',
+      'username': _userName,
+      'name': img.name,
     });
+
+    if (response['status'] == 'success') {
+      setState(() {
+        _allImages.remove(img);
+        for (var album in _myAlbums) {
+          album.images.remove(img);
+        }
+      });
+    }
   }
 
   void _createAlbum(String title) {
     setState(() {
       _myAlbums.add(AlbumModel(title: title, images: []));
-    });
-  }
-
-  void _removeImageFromAlbum(AlbumModel album, ImageModel img) {
-    setState(() {
-      album.images.remove(img);
-    });
-  }
-
-  void _updateAlbumCover(AlbumModel album, String url) {
-    setState(() {
-      album.coverUrl = url;
     });
   }
 
@@ -75,13 +72,42 @@ class _MainWrapperState extends State<MainWrapper> {
     });
   }
 
-  void _moveImageToAnotherAlbum(AlbumModel from, AlbumModel to, ImageModel img) {
-    setState(() {
-      from.images.remove(img);
-      if (!to.images.contains(img)) {
-        to.images.add(img);
-      }
+  void _removeImageFromAlbum(AlbumModel album, ImageModel img) async {
+    final response = await SocketService().sendRequest({
+      'action': 'removeImageFromAlbum',
+      'username': _userName,
+      'title': album.title,
+      'name': img.name,
     });
+
+    if (response['status'] == 'success') {
+      setState(() {
+        album.images.remove(img);
+      });
+    }
+  }
+
+  void _updateAlbumCover(AlbumModel album, String url) {
+    setState(() {
+      album.coverUrl = url;
+    });
+  }
+
+  void _moveImageToAnotherAlbum(AlbumModel source, AlbumModel target, ImageModel img) async {
+    final response = await SocketService().sendRequest({
+      'action': 'moveImage',
+      'username': _userName,
+      'sourceTitle': source.title,
+      'targetTitle': target.title,
+      'name': img.name,
+    });
+
+    if (response['status'] == 'success') {
+      setState(() {
+        source.images.remove(img);
+        target.images.add(img);
+      });
+    }
   }
 
   @override
@@ -96,7 +122,6 @@ class _MainWrapperState extends State<MainWrapper> {
       updateImages: (images) => setState(() => _allImages = images),
       updateAlbums: (albums) => setState(() => _myAlbums = albums),
       child: Scaffold(
-        appBar: AppBar(title: Text(_currentIndex == 0 ? 'Gallery' : 'Albums')),
         drawer: const CustomDrawer(),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,

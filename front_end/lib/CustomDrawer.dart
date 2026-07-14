@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'UserProvider.dart';
-import 'main.dart';
+import 'SocketService.dart';
 
 class CustomDrawer extends StatelessWidget {
   final VoidCallback? onLogout;
@@ -53,10 +53,13 @@ class CustomDrawer extends StatelessWidget {
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Logout', style: TextStyle(color: Colors.red)),
             onTap: () async {
+              await SocketService().sendRequest({'action': 'logout'});
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('isLoggedIn', false);
               if (onLogout != null) onLogout!();
-              Navigator.pushReplacementNamed(context, '/login');
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
             },
           ),
         ],

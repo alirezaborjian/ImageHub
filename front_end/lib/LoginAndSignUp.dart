@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'MainWrapper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'SocketService.dart'; 
 
 class LoginAndSignUp extends StatefulWidget {
   const LoginAndSignUp({super.key});
@@ -23,6 +24,9 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
     if (value == null || value.isEmpty) {
       return 'Please enter your password.';
     }
+    
+    if (isLoginMode) return null;
+
     if (value.length < 8) {
       return 'Password must be at least 8 characters long.';
     }
@@ -32,56 +36,106 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
     }
     final username = _usernameController.text.trim();
     if (username.isNotEmpty && value.contains(username)) {
-      return 'Password must not contain the username.';
+      return 'Password cannot contain your username.';
     }
     return null;
   }
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
-      await prefs.setString('userName', _usernameController.text.trim());
-      
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MainWrapper(userName: _usernameController.text.trim()),
-        ),
-      );
+      final username = _usernameController.text.trim();
+      final password = _passwordController.text;
+
+      // بررسی اتصال به سرور
+      if (!SocketService().isConnected) {
+        bool connected = await SocketService().connectToServer();
+        if (!connected) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cannot connect to Java Server. Check if server is running.')),
+          );
+          return;
+        }
+      }
+
+      Map<String, dynamic> request = {
+        'action': isLoginMode ? 'login' : 'signup',
+        'username': username,
+        'password': password,
+      };
+
+      final response = await SocketService().sendRequest(request);
+
+      if (response['status'] == 'success') {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+        await prefs.setString('userName', username);
+        if (response.containsKey('avatarUrl')) {
+          await prefs.setString('avatarUrl', response['avatarUrl'] ?? '');
+        }
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MainWrapper(
+                userName: username,
+                initialAvatarUrl: response['avatarUrl'] ?? '',
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response['message'] ?? 'Authentication failed.')),
+          );
+        }
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(30, 30, 40, 1),
+      backgroundColor: const Color.fromRGBO(30, 35, 45, 1),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Text(
+                  isLoginMode ? "Welcome Back" : "Create Account",
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 40),
                 TextFormField(
                   controller: _usernameController,
                   decoration: const InputDecoration(
-                    labelText: "Username",
+                    labelText: 'Username',
                     labelStyle: TextStyle(color: Colors.white70),
                     enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
                     focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
                   ),
                   style: const TextStyle(color: Colors.white),
-                  validator: (v) => v!.isEmpty ? 'Enter username' : null,
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Please enter username.' : null,
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 20),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !isPasswordVisible,
                   decoration: InputDecoration(
-                    labelText: "Password",
+                    labelText: 'Password',
                     labelStyle: const TextStyle(color: Colors.white70),
                     enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
                     focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
@@ -94,20 +148,27 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                   validator: _validatePassword,
                 ),
                 if (!isLoginMode) ...[
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 20),
                   TextFormField(
                     controller: _confirmPasswordController,
-                    obscureText: true,
+                    obscureText: !isPasswordVisible,
                     decoration: const InputDecoration(
-                      labelText: "Confirm Password",
+                      labelText: 'Confirm Password',
                       labelStyle: TextStyle(color: Colors.white70),
                       enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
                       focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
                     ),
                     style: const TextStyle(color: Colors.white),
+                    validator: (v) {
+                      if (!isLoginMode) {
+                        if (v == null || v.isEmpty) return 'Please confirm your password.';
+                        if (v != _passwordController.text) return 'Passwords do not match.';
+                      }
+                      return null;
+                    },
                   ),
                 ],
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
                 ElevatedButton(
                   onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
@@ -117,10 +178,13 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                   child: Text(isLoginMode ? "Login" : "Sign Up", style: const TextStyle(color: Colors.white)),
                 ),
                 TextButton(
-                  onPressed: () => setState(() => isLoginMode = !isLoginMode),
+                  onPressed: () => setState(() {
+                    isLoginMode = !isLoginMode;
+                    _formKey.currentState?.reset();
+                  }),
                   child: Text(
                     isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Login",
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white70),
                   ),
                 )
               ],

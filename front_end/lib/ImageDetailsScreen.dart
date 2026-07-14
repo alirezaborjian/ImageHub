@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
+import 'SocketService.dart';
 
 class ImageDetailsScreen extends StatefulWidget {
   final ImageModel imageItem;
@@ -25,18 +26,31 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
     super.dispose();
   }
 
-  void _submitComment() {
+  void _submitComment() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        widget.imageItem.comments.add(
-          CommentModel(
-            userName: widget.currentUserName,
-            text: _commentController.text.trim(),
-          ),
-        );
+      final commentText = _commentController.text.trim();
+
+      final response = await SocketService().sendRequest({
+        'action': 'addComment',
+        'name': widget.imageItem.name,
+        'username': widget.currentUserName,
+        'text': commentText,
       });
-      _commentController.clear();
-      FocusScope.of(context).unfocus();
+
+      if (response['status'] == 'success') {
+        setState(() {
+          widget.imageItem.comments.add(
+            CommentModel(
+              userName: widget.currentUserName,
+              text: commentText,
+            ),
+          );
+        });
+        _commentController.clear();
+        if (mounted) {
+          FocusScope.of(context).unfocus();
+        }
+      }
     }
   }
 
@@ -49,7 +63,13 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(item.imageUrl, width: double.infinity, fit: BoxFit.cover),
+            Image.network(
+              item.imageUrl,
+              width: double.infinity,
+              height: 300,
+              fit: BoxFit.cover,
+              errorBuilder: (c, e, s) => Container(height: 300, color: Colors.grey[200], child: const Icon(Icons.broken_image)),
+            ),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -57,10 +77,15 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                 children: [
                   Text(item.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  Text(item.caption, style: const TextStyle(fontSize: 16)),
-                  const Divider(height: 32),
-                  const Text('Comments', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
+                  Text(item.caption, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    children: item.tags.map((t) => Chip(label: Text('#$t'))).toList(),
+                  ),
+                  const Divider(height: 30),
+                  Text('Comments (${item.comments.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),

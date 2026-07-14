@@ -1,13 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
+import 'SocketService.dart';
+import 'UserProvider.dart';
 
 class UploadScreen extends StatefulWidget {
   final Function(ImageModel) onImageUploaded;
 
-  const UploadScreen({
-    super.key,
-    required this.onImageUploaded,
-  });
+  const UploadScreen({super.key, required this.onImageUploaded});
 
   @override
   State<UploadScreen> createState() => _UploadScreenState();
@@ -17,55 +18,38 @@ class _UploadScreenState extends State<UploadScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _captionController = TextEditingController();
-  final TextEditingController _urlController = TextEditingController();
+  String _dummyBase64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="; 
 
-  String? _selectedSourceMessage;
+  void _submitUpload() async {
+    if (_formKey.currentState!.validate()) {
+      final socketService = SocketService();
+      final userProvider = UserProvider.of(context);
+      final currentUserName = userProvider?.userName ?? "User";
+      
+      Map<String, dynamic> request = {
+        'action': 'uploadImage',
+        'name': _nameController.text.trim(),
+        'caption': _captionController.text.trim(),
+        'base64Data': _dummyBase64Data, 
+        'username': currentUserName,
+      };
 
-  void _pickFromGallery() {
-    setState(() {
-      _selectedSourceMessage = "Selected from Gallery";
-      _urlController.text = "https://picsum.photos/400/500";
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Image successfully picked from Gallery!')),
-    );
-  }
+      final response = await socketService.sendRequest(request);
 
-  void _takeWithCamera() {
-    setState(() {
-      _selectedSourceMessage = "Captured with Camera";
-      _urlController.text = "https://picsum.photos/400/500";
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Image successfully captured!')),
-    );
-  }
-
-  void _submitUpload() {
-    if (_formKey.currentState!.validate() && _urlController.text.isNotEmpty) {
-      final newImage = ImageModel(
-        name: _nameController.text.trim(),
-        caption: _captionController.text.trim(),
-        imageUrl: _urlController.text.trim(),
-        likes: 0,
-        tags: [],
-        comments: [],
-      );
-      widget.onImageUploaded(newImage);
-      Navigator.pop(context);
-    } else if (_urlController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an image source first')),
-      );
+      if (response['status'] == 'success') {
+        final serverImg = response['image'];
+        final newImg = ImageModel(
+          name: serverImg['name'],
+          caption: serverImg['caption'],
+          imageUrl: 'https://picsum.photos/400/500', 
+          likes: 0,
+          tags: [],
+          comments: [],
+        );
+        widget.onImageUploaded(newImg);
+        if (mounted) Navigator.pop(context);
+      }
     }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _captionController.dispose();
-    _urlController.dispose();
-    super.dispose();
   }
 
   @override
@@ -76,7 +60,7 @@ class _UploadScreenState extends State<UploadScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: Column(
             children: [
               TextFormField(
                 controller: _nameController,
@@ -87,31 +71,11 @@ class _UploadScreenState extends State<UploadScreen> {
                 controller: _captionController,
                 decoration: const InputDecoration(labelText: 'Caption'),
               ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: _pickFromGallery,
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Gallery'),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _takeWithCamera,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Camera'),
-                  ),
-                ],
-              ),
-              if (_selectedSourceMessage != null) ...[
-                const SizedBox(height: 10),
-                Text(_selectedSourceMessage!, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-              ],
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: _submitUpload,
                 child: const Text('Post Image'),
-              )
+              ),
             ],
           ),
         ),

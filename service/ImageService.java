@@ -1,7 +1,6 @@
 package service;
 
 import model.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,7 +15,6 @@ public class ImageService {
         TAG,      
         ALL        
     }
-
 
     public ImageService(List<Image> allImages) {
         this.allImages = allImages;
@@ -35,35 +33,48 @@ public class ImageService {
         image.addComment(new Comment(userName, text));
     }
 
-
     public List<Image> search(SearchType type, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return allImages;
+        }
+        
+        String lowerKeyword = keyword.toLowerCase();
 
         switch (type) {
             case NAME:
-   
                 return allImages.stream()
-                    .filter(img -> img.getName().toLowerCase().contains(keyword.toLowerCase()))
+                    .filter(img -> img.getName() != null && img.getName().toLowerCase().contains(lowerKeyword))
                     .collect(Collectors.toList());
                 
             case COMMENT:
-          
                 return allImages.stream()
-                    .filter(img -> img.getComments().contains(keyword))
+                    .filter(img -> img.getComments() != null && img.getComments().stream()
+                        .anyMatch(c -> c.getText() != null && c.getText().toLowerCase().contains(lowerKeyword)))
                     .collect(Collectors.toList());
                 
             case TAG:
-      
                 return allImages.stream()
-                    .filter(img -> img.getTags().stream()
-                        .anyMatch(tag -> tag.toLowerCase().contains(keyword.toLowerCase())))
+                    .filter(img -> img.getTags() != null && img.getTags().stream()
+                        .anyMatch(tag -> tag != null && tag.toLowerCase().contains(lowerKeyword)))
+                    .collect(Collectors.toList());
+
+            case DATE:
+                return allImages.stream()
+                    .filter(img -> img.getUploadDate() != null && img.getUploadDate().toString().contains(keyword))
+                    .collect(Collectors.toList());
+
+            case ALL:
+                return allImages.stream()
+                    .filter(img -> 
+                        (img.getName() != null && img.getName().toLowerCase().contains(lowerKeyword)) ||
+                        (img.getComments() != null && img.getComments().stream().anyMatch(c -> c.getText() != null && c.getText().toLowerCase().contains(lowerKeyword))) ||
+                        (img.getTags() != null && img.getTags().stream().anyMatch(tag -> tag != null && tag.toLowerCase().contains(lowerKeyword))) ||
+                        (img.getUploadDate() != null && img.getUploadDate().toString().contains(keyword))
+                    )
                     .collect(Collectors.toList());
                 
             default:
-                return allImages; 
+                return allImages;
         }
     }
-
-    
-
-    
 }

@@ -46,17 +46,37 @@ class _MyAppState extends State<MyApp> {
       isDarkMode: _themeMode == ThemeMode.dark,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Image Gallery',
+        title: 'Image Manager',
         theme: ThemeData.light(),
         darkTheme: ThemeData.dark(),
         themeMode: _themeMode,
         initialRoute: '/',
-        routes: {
-          '/': (context) => const LoginAndSignUp(),
-          '/login': (context) => const LoginAndSignUp(),
-        },
         onGenerateRoute: (settings) {
-          if (settings.name == '/home' || settings.name == '/albums') {
+          if (settings.name == '/') {
+            return MaterialPageRoute(
+              builder: (context) => FutureBuilder(
+                future: SharedPreferences.getInstance(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final prefs = snapshot.data as SharedPreferences?;
+                  final isLoggedIn = prefs?.getBool('isLoggedIn') ?? false;
+                  if (isLoggedIn) {
+                    final userName = prefs?.getString('userName') ?? 'User';
+                    return MainWrapper(userName: userName);
+                  }
+                  return const LoginAndSignUp();
+                },
+              ),
+            );
+          }
+          if (settings.name == '/login') {
+            return MaterialPageRoute(builder: (context) => const LoginAndSignUp());
+          }
+          if (settings.name == '/home') {
             return MaterialPageRoute(
               builder: (context) => FutureBuilder(
                 future: _getUserData(),
