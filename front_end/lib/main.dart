@@ -66,7 +66,8 @@ class _MyAppState extends State<MyApp> {
                   final isLoggedIn = prefs?.getBool('isLoggedIn') ?? false;
                   if (isLoggedIn) {
                     final userName = prefs?.getString('userName') ?? 'User';
-                    return MainWrapper(userName: userName);
+                    final avatarUrl = prefs?.getString('avatarUrl') ?? '';
+                    return MainWrapper(userName: userName, initialAvatarUrl: avatarUrl);
                   }
                   return const LoginAndSignUp();
                 },

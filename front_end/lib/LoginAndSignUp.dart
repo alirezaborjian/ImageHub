@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'MainWrapper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'SocketService.dart'; 
+import 'SocketService.dart';
 
 class LoginAndSignUp extends StatefulWidget {
   const LoginAndSignUp({super.key});
@@ -24,7 +24,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
     if (value == null || value.isEmpty) {
       return 'Please enter your password.';
     }
-    
+
     if (isLoginMode) return null;
 
     if (value.length < 8) {
@@ -35,7 +35,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
       return 'Must contain uppercase, lowercase, and numbers.';
     }
     final username = _usernameController.text.trim();
-    if (username.isNotEmpty && value.contains(username)) {
+    if (username.isNotEmpty && value.toLowerCase().contains(username.toLowerCase())) {
       return 'Password cannot contain your username.';
     }
     return null;
@@ -46,9 +46,8 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
       final username = _usernameController.text.trim();
       final password = _passwordController.text;
 
-      // بررسی اتصال به سرور
       if (!SocketService().isConnected) {
-        bool connected = await SocketService().connectToServer();
+        bool connected = await SocketService().connectToServer(host: '10.0.2.2', port: 8085);
         if (!connected) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Cannot connect to Java Server. Check if server is running.')),
@@ -65,12 +64,15 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
 
       final response = await SocketService().sendRequest(request);
 
-      if (response['status'] == 'success') {
+      if (response['statusCode'] == 200) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
         await prefs.setString('userName', username);
-        if (response.containsKey('avatarUrl')) {
-          await prefs.setString('avatarUrl', response['avatarUrl'] ?? '');
+
+        String avatarUrl = '';
+        if (response['payload'] != null && response['payload']['avatarUrl'] != null) {
+          avatarUrl = response['payload']['avatarUrl'];
+          await prefs.setString('avatarUrl', avatarUrl);
         }
 
         if (mounted) {
@@ -79,7 +81,7 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
             MaterialPageRoute(
               builder: (context) => MainWrapper(
                 userName: username,
-                initialAvatarUrl: response['avatarUrl'] ?? '',
+                initialAvatarUrl: avatarUrl,
               ),
             ),
           );

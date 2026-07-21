@@ -37,7 +37,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
         'text': commentText,
       });
 
-      if (response['status'] == 'success') {
+      if (response['statusCode'] == 200) {
         setState(() {
           widget.imageItem.comments.add(
             CommentModel(

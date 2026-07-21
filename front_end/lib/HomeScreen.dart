@@ -75,9 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final response = await SocketService().sendRequest({
       'action': 'likeImage',
       'name': item.name,
+      'username': widget.userName,
     });
 
-    if (response['status'] == 'success') {
+    if (response['statusCode'] == 200) {
       setState(() {
         if (item.isLikedByMe) {
           item.likes--;

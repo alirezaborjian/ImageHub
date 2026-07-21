@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
 import 'SocketService.dart';
@@ -18,30 +16,30 @@ class _UploadScreenState extends State<UploadScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _captionController = TextEditingController();
-  String _dummyBase64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="; 
+  final String _dummyBase64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
   void _submitUpload() async {
     if (_formKey.currentState!.validate()) {
       final socketService = SocketService();
       final userProvider = UserProvider.of(context);
       final currentUserName = userProvider?.userName ?? "User";
-      
+
       Map<String, dynamic> request = {
         'action': 'uploadImage',
         'name': _nameController.text.trim(),
         'caption': _captionController.text.trim(),
-        'base64Data': _dummyBase64Data, 
+        'base64Data': _dummyBase64Data,
         'username': currentUserName,
       };
 
       final response = await socketService.sendRequest(request);
 
-      if (response['status'] == 'success') {
-        final serverImg = response['image'];
+      if (response['statusCode'] == 200) {
+        final serverImg = response['payload'];
         final newImg = ImageModel(
-          name: serverImg['name'],
-          caption: serverImg['caption'],
-          imageUrl: 'https://picsum.photos/400/500', 
+          name: serverImg['name'] ?? _nameController.text.trim(),
+          caption: serverImg['caption'] ?? _captionController.text.trim(),
+          imageUrl: serverImg['imageUrl'] ?? 'https://picsum.photos/400/500',
           likes: 0,
           tags: [],
           comments: [],

@@ -60,7 +60,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
       'title': title,
     });
 
-    if (response['status'] == 'success') {
+    if (response['statusCode'] == 200) {
       widget.onCreateAlbum(title);
       _albumTitleController.clear();
       if (mounted) Navigator.pop(context);
@@ -75,7 +75,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
       'title': album.title,
     });
 
-    if (response['status'] == 'success') {
+    if (response['statusCode'] == 200) {
       widget.onDeleteAlbum(album);
     }
   }

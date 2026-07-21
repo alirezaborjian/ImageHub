@@ -5,7 +5,6 @@ import 'UploadScreen.dart';
 import 'CustomDrawer.dart';
 import 'UserProvider.dart';
 import 'SocketService.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class MainWrapper extends StatefulWidget {
   final String userName;
@@ -50,7 +49,7 @@ class _MainWrapperState extends State<MainWrapper> {
       'name': img.name,
     });
 
-    if (response['status'] == 'success') {
+    if (response['statusCode'] == 200) {
       setState(() {
         _allImages.remove(img);
         for (var album in _myAlbums) {
@@ -80,7 +79,7 @@ class _MainWrapperState extends State<MainWrapper> {
       'name': img.name,
     });
 
-    if (response['status'] == 'success') {
+    if (response['statusCode'] == 200) {
       setState(() {
         album.images.remove(img);
       });
@@ -97,12 +96,12 @@ class _MainWrapperState extends State<MainWrapper> {
     final response = await SocketService().sendRequest({
       'action': 'moveImage',
       'username': _userName,
-      'sourceTitle': source.title,
-      'targetTitle': target.title,
-      'name': img.name,
+      'sourceAlbum': source.title,
+      'targetAlbum': target.title,
+      'imageName': img.name,
     });
 
-    if (response['status'] == 'success') {
+    if (response['statusCode'] == 200) {
       setState(() {
         source.images.remove(img);
         target.images.add(img);
