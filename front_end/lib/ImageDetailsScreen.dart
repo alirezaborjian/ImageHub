@@ -40,10 +40,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
       if (response['statusCode'] == 200) {
         setState(() {
           widget.imageItem.comments.add(
-            CommentModel(
-              userName: widget.currentUserName,
-              text: commentText,
-            ),
+            CommentModel(userName: widget.currentUserName, text: commentText),
           );
         });
         _commentController.clear();
@@ -68,23 +65,44 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
               width: double.infinity,
               height: 300,
               fit: BoxFit.cover,
-              errorBuilder: (c, e, s) => Container(height: 300, color: Colors.grey[200], child: const Icon(Icons.broken_image)),
+              errorBuilder: (c, e, s) => Container(
+                height: 300,
+                color: Colors.grey[200],
+                child: const Icon(Icons.broken_image),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Text(item.caption, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                  Text(
+                    item.caption,
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
-                    children: item.tags.map((t) => Chip(label: Text('#$t'))).toList(),
+                    children: item.tags
+                        .map((t) => Chip(label: Text('#$t')))
+                        .toList(),
                   ),
                   const Divider(height: 30),
-                  Text('Comments (${item.comments.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Comments (${item.comments.length})',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   ListView.builder(
                     shrinkWrap: true,
@@ -94,7 +112,10 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                       final c = item.comments[idx];
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(c.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(
+                          c.userName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         subtitle: Text(c.text),
                       );
                     },
@@ -102,6 +123,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                   const SizedBox(height: 15),
                   Form(
                     key: _formKey,
+
                     child: Row(
                       children: [
                         Expanded(
@@ -111,11 +133,17 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                               hintText: 'Add a comment...',
                               border: UnderlineInputBorder(),
                             ),
-                            validator: (value) => value == null || value.trim().isEmpty ? 'Comment cannot be empty' : null,
+                            validator: (value) =>
+                                value == null || value.trim().isEmpty
+                                ? 'Comment cannot be empty'
+                                : null,
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.send, color: Color.fromRGBO(143, 148, 251, 1)),
+                          icon: const Icon(
+                            Icons.send,
+                            color: Color.fromRGBO(143, 148, 251, 1),
+                          ),
                           onPressed: _submitComment,
                         ),
                       ],

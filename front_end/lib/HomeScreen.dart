@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'UploadScreen.dart';
 import 'ImageDetailsScreen.dart';
 import 'SocketService.dart';
 
@@ -65,7 +64,11 @@ class _HomeScreenState extends State<HomeScreen> {
         filteredImages = allImages;
       } else {
         filteredImages = allImages
-            .where((img) => img.name.toLowerCase().contains(query.toLowerCase()) || img.caption.toLowerCase().contains(query.toLowerCase()))
+            .where(
+              (img) =>
+                  img.name.toLowerCase().contains(query.toLowerCase()) ||
+                  img.caption.toLowerCase().contains(query.toLowerCase()),
+            )
             .toList();
       }
     });
@@ -100,7 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ? TextField(
                 controller: searchController,
                 autofocus: true,
-                decoration: const InputDecoration(hintText: 'Search images...', border: InputBorder.none),
+                decoration: const InputDecoration(
+                  hintText: 'Search images...',
+                  border: InputBorder.none,
+                ),
                 onChanged: _filterImages,
               )
             : const Text('Gallery'),
@@ -128,7 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (context, index) {
                 final item = filteredImages[index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -157,7 +166,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       ListTile(
-                        title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(
+                          item.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         subtitle: Text(item.caption),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -167,8 +179,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Row(
                                 children: [
                                   Icon(
-                                    item.isLikedByMe ? Icons.favorite : Icons.favorite_border,
-                                    color: item.isLikedByMe ? Colors.red : Colors.grey[600],
+                                    item.isLikedByMe
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: item.isLikedByMe
+                                        ? Colors.red
+                                        : Colors.grey[600],
                                     size: 18,
                                   ),
                                   const SizedBox(width: 4),

@@ -15,7 +15,8 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
 
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   bool isPasswordVisible = false;
@@ -35,7 +36,8 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
       return 'Must contain uppercase, lowercase, and numbers.';
     }
     final username = _usernameController.text.trim();
-    if (username.isNotEmpty && value.toLowerCase().contains(username.toLowerCase())) {
+    if (username.isNotEmpty &&
+        value.toLowerCase().contains(username.toLowerCase())) {
       return 'Password cannot contain your username.';
     }
     return null;
@@ -47,10 +49,17 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
       final password = _passwordController.text;
 
       if (!SocketService().isConnected) {
-        bool connected = await SocketService().connectToServer(host: '10.0.2.2', port: 8085);
+        bool connected = await SocketService().connectToServer(
+          host: '10.0.2.2',
+          port: 8085,
+        );
         if (!connected) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cannot connect to Java Server. Check if server is running.')),
+            const SnackBar(
+              content: Text(
+                'Cannot connect to Java Server. Check if server is running.',
+              ),
+            ),
           );
           return;
         }
@@ -70,7 +79,8 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
         await prefs.setString('userName', username);
 
         String avatarUrl = '';
-        if (response['payload'] != null && response['payload']['avatarUrl'] != null) {
+        if (response['payload'] != null &&
+            response['payload']['avatarUrl'] != null) {
           avatarUrl = response['payload']['avatarUrl'];
           await prefs.setString('avatarUrl', avatarUrl);
         }
@@ -79,17 +89,17 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainWrapper(
-                userName: username,
-                initialAvatarUrl: avatarUrl,
-              ),
+              builder: (context) =>
+                  MainWrapper(userName: username, initialAvatarUrl: avatarUrl),
             ),
           );
         }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Authentication failed.')),
+            SnackBar(
+              content: Text(response['message'] ?? 'Authentication failed.'),
+            ),
           );
         }
       }
@@ -118,7 +128,11 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
               children: [
                 Text(
                   isLoginMode ? "Welcome Back" : "Create Account",
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 TextFormField(
@@ -126,11 +140,17 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                   decoration: const InputDecoration(
                     labelText: 'Username',
                     labelStyle: TextStyle(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
-                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white70),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
                   ),
                   style: const TextStyle(color: Colors.white),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Please enter username.' : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'Please enter username.'
+                      : null,
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -139,11 +159,22 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                   decoration: InputDecoration(
                     labelText: 'Password',
                     labelStyle: const TextStyle(color: Colors.white70),
-                    enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
-                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                    enabledBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white70),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
                     suffixIcon: IconButton(
-                      icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.white70),
-                      onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
+                      icon: Icon(
+                        isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.white70,
+                      ),
+                      onPressed: () => setState(
+                        () => isPasswordVisible = !isPasswordVisible,
+                      ),
                     ),
                   ),
                   style: const TextStyle(color: Colors.white),
@@ -157,14 +188,20 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                     decoration: const InputDecoration(
                       labelText: 'Confirm Password',
                       labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white70)),
-                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white70),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
                     ),
                     style: const TextStyle(color: Colors.white),
                     validator: (v) {
                       if (!isLoginMode) {
-                        if (v == null || v.isEmpty) return 'Please confirm your password.';
-                        if (v != _passwordController.text) return 'Passwords do not match.';
+                        if (v == null || v.isEmpty)
+                          return 'Please confirm your password.';
+                        if (v != _passwordController.text)
+                          return 'Passwords do not match.';
                       }
                       return null;
                     },
@@ -177,7 +214,10 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
                   ),
-                  child: Text(isLoginMode ? "Login" : "Sign Up", style: const TextStyle(color: Colors.white)),
+                  child: Text(
+                    isLoginMode ? "Login" : "Sign Up",
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
                 TextButton(
                   onPressed: () => setState(() {
@@ -185,10 +225,12 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                     _formKey.currentState?.reset();
                   }),
                   child: Text(
-                    isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Login",
+                    isLoginMode
+                        ? "Don't have an account? Sign Up"
+                        : "Already have an account? Login",
                     style: const TextStyle(color: Colors.white70),
                   ),
-                )
+                ),
               ],
             ),
           ),

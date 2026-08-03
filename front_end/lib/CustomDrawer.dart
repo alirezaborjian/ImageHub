@@ -28,9 +28,14 @@ class CustomDrawer extends StatelessWidget {
             accountEmail: const Text('Standard User'),
             currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.white,
-              child: Text(userName.isEmpty ? 'U' : userName[0].toUpperCase(), style: const TextStyle(fontSize: 24, color: Colors.blue)),
+              child: Text(
+                userName.isEmpty ? 'U' : userName[0].toUpperCase(),
+                style: const TextStyle(fontSize: 24, color: Colors.blue),
+              ),
             ),
-            decoration: const BoxDecoration(color: Color.fromRGBO(143, 148, 251, 1)),
+            decoration: const BoxDecoration(
+              color: Color.fromRGBO(143, 148, 251, 1),
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.home),

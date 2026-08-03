@@ -92,7 +92,11 @@ class _MainWrapperState extends State<MainWrapper> {
     });
   }
 
-  void _moveImageToAnotherAlbum(AlbumModel source, AlbumModel target, ImageModel img) async {
+  void _moveImageToAnotherAlbum(
+    AlbumModel source,
+    AlbumModel target,
+    ImageModel img,
+  ) async {
     final response = await SocketService().sendRequest({
       'action': 'moveImage',
       'username': _userName,
@@ -127,19 +131,26 @@ class _MainWrapperState extends State<MainWrapper> {
           onTap: (index) => setState(() => _currentIndex = index),
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.photo), label: 'Gallery'),
-            BottomNavigationBarItem(icon: Icon(Icons.collections_bookmark), label: 'Albums'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.collections_bookmark),
+              label: 'Albums',
+            ),
           ],
         ),
         floatingActionButton: _currentIndex == 0
             ? FloatingActionButton.extended(
                 backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
                 icon: const Icon(Icons.add_a_photo, color: Colors.white),
-                label: const Text('Add Photo', style: TextStyle(color: Colors.white)),
+                label: const Text(
+                  'Add Photo',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => UploadScreen(onImageUploaded: _addImage),
+                      builder: (context) =>
+                          UploadScreen(onImageUploaded: _addImage),
                     ),
                   );
                 },
@@ -148,7 +159,11 @@ class _MainWrapperState extends State<MainWrapper> {
         body: IndexedStack(
           index: _currentIndex,
           children: [
-            HomeScreen(images: _allImages, userName: _userName, onImageDeleted: _deleteImage),
+            HomeScreen(
+              images: _allImages,
+              userName: _userName,
+              onImageDeleted: _deleteImage,
+            ),
             AlbumScreen(
               albums: _myAlbums,
               allImages: _allImages,

@@ -9,11 +9,7 @@ class AlbumModel {
   String coverUrl;
   final List<ImageModel> images;
 
-  AlbumModel({
-    required this.title,
-    required this.images,
-    this.coverUrl = '',
-  });
+  AlbumModel({required this.title, required this.images, this.coverUrl = ''});
 }
 
 class AlbumScreen extends StatefulWidget {
@@ -110,7 +106,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                 ),
               );
             },
-          )
+          ),
         ],
       ),
       body: widget.albums.isEmpty
@@ -131,7 +127,10 @@ class _AlbumScreenState extends State<AlbumScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => AlbumDetailsScreen(album: album, allImages: widget.allImages),
+                        builder: (context) => AlbumDetailsScreen(
+                          album: album,
+                          allImages: widget.allImages,
+                        ),
                       ),
                     );
                   },
@@ -146,7 +145,11 @@ class AlbumDetailsScreen extends StatefulWidget {
   final AlbumModel album;
   final List<ImageModel> allImages;
 
-  const AlbumDetailsScreen({super.key, required this.album, required this.allImages});
+  const AlbumDetailsScreen({
+    super.key,
+    required this.album,
+    required this.allImages,
+  });
 
   @override
   State<AlbumDetailsScreen> createState() => _AlbumDetailsScreenState();
@@ -176,7 +179,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
                 ),
               );
             },
-          )
+          ),
         ],
       ),
       body: widget.album.images.isEmpty

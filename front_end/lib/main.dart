@@ -67,7 +67,10 @@ class _MyAppState extends State<MyApp> {
                   if (isLoggedIn) {
                     final userName = prefs?.getString('userName') ?? 'User';
                     final avatarUrl = prefs?.getString('avatarUrl') ?? '';
-                    return MainWrapper(userName: userName, initialAvatarUrl: avatarUrl);
+                    return MainWrapper(
+                      userName: userName,
+                      initialAvatarUrl: avatarUrl,
+                    );
                   }
                   return const LoginAndSignUp();
                 },
@@ -75,7 +78,9 @@ class _MyAppState extends State<MyApp> {
             );
           }
           if (settings.name == '/login') {
-            return MaterialPageRoute(builder: (context) => const LoginAndSignUp());
+            return MaterialPageRoute(
+              builder: (context) => const LoginAndSignUp(),
+            );
           }
           if (settings.name == '/home') {
             return MaterialPageRoute(
