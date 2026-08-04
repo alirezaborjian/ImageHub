@@ -51,18 +51,19 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ImageModel> filteredImages = [];
   bool isSearching = false;
   final TextEditingController searchController = TextEditingController();
+  String selectedSortOption = 'Default';
 
   @override
   void initState() {
     super.initState();
     allImages = widget.images;
-    filteredImages = allImages;
+    filteredImages = List.from(allImages);
   }
 
   void _filterImages(String query) {
     setState(() {
       if (query.isEmpty) {
-        filteredImages = allImages;
+        filteredImages = List.from(allImages);
       } else {
         filteredImages = allImages
             .where(
@@ -71,6 +72,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   img.caption.toLowerCase().contains(query.toLowerCase()),
             )
             .toList();
+      }
+      _applySort(selectedSortOption);
+    });
+  }
+
+  void _applySort(String criteria) {
+    setState(() {
+      selectedSortOption = criteria;
+      if (criteria == 'Most Liked') {
+        filteredImages.sort((a, b) => b.likes.compareTo(a.likes));
+      } else if (criteria == 'Alphabetical') {
+        filteredImages.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      } else if (criteria == 'Default') {
+        if (searchController.text.isEmpty) {
+          filteredImages = List.from(allImages);
+        } else {
+          filteredImages = allImages
+              .where(
+                (img) =>
+                    img.name.toLowerCase().contains(searchController.text.toLowerCase()) ||
+                    img.caption.toLowerCase().contains(searchController.text.toLowerCase()),
+              )
+              .toList();
+        }
       }
     });
   }
@@ -91,6 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
           } else {
             item.likes++;
             item.isLikedByMe = true;
+          }
+          if (selectedSortOption == 'Most Liked') {
+            _applySort('Most Liked');
           }
         });
       }
@@ -180,6 +208,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
         actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort, color: Colors.black),
+            onSelected: _applySort,
+            itemBuilder: (BuildContext context) {
+              return {'Default', 'Most Liked', 'Alphabetical'}.map((String choice) {
+                return PopupMenuItem<String>(
+                  value: choice,
+                  child: Row(
+                    children: [
+                      if (selectedSortOption == choice)
+                        const Icon(Icons.check, size: 18, color: Color.fromRGBO(143, 148, 251, 1))
+                      else
+                        const SizedBox(width: 18),
+                      const SizedBox(width: 8),
+                      Text(choice),
+                    ],
+                  ),
+                );
+              }).toList();
+            },
+          ),
           IconButton(
             icon: Icon(
               isSearching ? Icons.close : Icons.search,
@@ -190,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (isSearching) {
                   isSearching = false;
                   searchController.clear();
-                  filteredImages = allImages;
+                  _filterImages('');
                 } else {
                   isSearching = true;
                 }
