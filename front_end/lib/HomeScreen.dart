@@ -126,36 +126,50 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildImageWidget(String url) {
-    if (url.isEmpty) {
+    if (url.trim().isEmpty) {
       return Container(
         color: Colors.grey[300],
         child: const Icon(Icons.broken_image, color: Colors.grey),
       );
     }
 
-    if (url.startsWith('data:image') || url.length > 500) {
+    String cleanUrl = url.trim().replaceAll('\n', '').replaceAll('\r', '');
+
+    bool isBase64 = cleanUrl.startsWith('data:image') ||
+        (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://'));
+
+    if (isBase64) {
       try {
-        final base64Str = url.contains(',') ? url.split(',').last : url;
+        final base64Str = cleanUrl.contains(',') ? cleanUrl.split(',').last : cleanUrl;
         return Image.memory(
           base64Decode(base64Str),
           width: double.infinity,
           fit: BoxFit.cover,
-          errorBuilder: (c, e, s) => Container(
-            color: Colors.grey[300],
-            child: const Icon(Icons.broken_image, color: Colors.grey),
-          ),
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[300],
+              child: const Icon(Icons.broken_image, color: Colors.grey),
+            );
+          },
         );
-      } catch (_) {}
+      } catch (_) {
+        return Container(
+          color: Colors.grey[300],
+          child: const Icon(Icons.broken_image, color: Colors.grey),
+        );
+      }
     }
 
     return Image.network(
-      url,
+      cleanUrl,
       width: double.infinity,
       fit: BoxFit.cover,
-      errorBuilder: (c, e, s) => Container(
-        color: Colors.grey[300],
-        child: const Icon(Icons.broken_image, color: Colors.grey),
-      ),
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Colors.grey[300],
+          child: const Icon(Icons.broken_image, color: Colors.grey),
+        );
+      },
     );
   }
 

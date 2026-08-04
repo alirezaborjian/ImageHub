@@ -53,7 +53,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
   }
 
   Widget _buildImageWidget(String url) {
-    if (url.isEmpty) {
+    if (url.trim().isEmpty) {
       return Container(
         height: 300,
         color: Colors.grey[200],
@@ -61,33 +61,48 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
       );
     }
 
-    if (url.startsWith('data:image') || url.length > 500) {
+    String cleanUrl = url.trim().replaceAll('\n', '').replaceAll('\r', '');
+
+    bool isBase64 = cleanUrl.startsWith('data:image') ||
+        (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://'));
+
+    if (isBase64) {
       try {
-        final base64Str = url.contains(',') ? url.split(',').last : url;
+        final base64Str = cleanUrl.contains(',') ? cleanUrl.split(',').last : cleanUrl;
         return Image.memory(
           base64Decode(base64Str),
           width: double.infinity,
           height: 300,
           fit: BoxFit.cover,
-          errorBuilder: (c, e, s) => Container(
-            height: 300,
-            color: Colors.grey[200],
-            child: const Icon(Icons.broken_image),
-          ),
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              height: 300,
+              color: Colors.grey[200],
+              child: const Icon(Icons.broken_image),
+            );
+          },
         );
-      } catch (_) {}
+      } catch (_) {
+        return Container(
+          height: 300,
+          color: Colors.grey[200],
+          child: const Icon(Icons.broken_image),
+        );
+      }
     }
 
     return Image.network(
-      url,
+      cleanUrl,
       width: double.infinity,
       height: 300,
       fit: BoxFit.cover,
-      errorBuilder: (c, e, s) => Container(
-        height: 300,
-        color: Colors.grey[200],
-        child: const Icon(Icons.broken_image),
-      ),
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          height: 300,
+          color: Colors.grey[200],
+          child: const Icon(Icons.broken_image),
+        );
+      },
     );
   }
 
