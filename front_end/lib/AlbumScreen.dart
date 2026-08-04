@@ -129,7 +129,12 @@ class _AlbumScreenState extends State<AlbumScreen> {
                       MaterialPageRoute(
                         builder: (context) => AlbumDetailsScreen(
                           album: album,
+                          allAlbums: widget.albums,
                           allImages: widget.allImages,
+                          onRemoveImage: (img) =>
+                              widget.onRemoveImageFromAlbum(album, img),
+                          onMoveImage: (target, img) => widget
+                              .onMoveImageToAnotherAlbum(album, target, img),
                         ),
                       ),
                     );
@@ -143,12 +148,18 @@ class _AlbumScreenState extends State<AlbumScreen> {
 
 class AlbumDetailsScreen extends StatefulWidget {
   final AlbumModel album;
+  final List<AlbumModel> allAlbums;
   final List<ImageModel> allImages;
+  final Function(ImageModel) onRemoveImage;
+  final Function(AlbumModel, ImageModel) onMoveImage;
 
   const AlbumDetailsScreen({
     super.key,
     required this.album,
+    required this.allAlbums,
     required this.allImages,
+    required this.onRemoveImage,
+    required this.onMoveImage,
   });
 
   @override
@@ -156,6 +167,73 @@ class AlbumDetailsScreen extends StatefulWidget {
 }
 
 class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
+  void _showImageOptions(ImageModel img) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Wrap(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.drive_file_move),
+            title: const Text('Move to another album'),
+            onTap: () {
+              Navigator.pop(context);
+              _showMoveDialog(img);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: const Text(
+              'Remove from album',
+              style: TextStyle(color: Colors.red),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              widget.onRemoveImage(img);
+              setState(() {});
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMoveDialog(ImageModel img) {
+    final otherAlbums = widget.allAlbums
+        .where((a) => a.title != widget.album.title)
+        .toList();
+    if (otherAlbums.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No other albums available.')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Target Album'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: otherAlbums.length,
+            itemBuilder: (context, index) {
+              final target = otherAlbums[index];
+              return ListTile(
+                title: Text(target.title),
+                onTap: () {
+                  Navigator.pop(context);
+                  widget.onMoveImage(target, img);
+                  setState(() {});
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,9 +272,12 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
               itemCount: widget.album.images.length,
               itemBuilder: (context, index) {
                 final img = widget.album.images[index];
-                return Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.network(img.imageUrl, fit: BoxFit.cover),
+                return GestureDetector(
+                  onLongPress: () => _showImageOptions(img),
+                  child: Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.network(img.imageUrl, fit: BoxFit.cover),
+                  ),
                 );
               },
             ),

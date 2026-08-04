@@ -98,21 +98,33 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     allImages = widget.images;
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         title: isSearching
             ? TextField(
                 controller: searchController,
                 autofocus: true,
                 decoration: const InputDecoration(
-                  hintText: 'Search images...',
+                  hintText: 'Search Pinterest...',
                   border: InputBorder.none,
                 ),
                 onChanged: _filterImages,
               )
-            : const Text('Gallery'),
+            : const Text(
+                'Explore',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
         actions: [
           IconButton(
-            icon: Icon(isSearching ? Icons.close : Icons.search),
+            icon: Icon(
+              isSearching ? Icons.close : Icons.search,
+              color: Colors.black,
+            ),
             onPressed: () {
               setState(() {
                 if (isSearching) {
@@ -128,80 +140,97 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: filteredImages.isEmpty
-          ? const Center(child: Text('No images found.'))
-          : ListView.builder(
+          ? const Center(child: Text('No pins found.'))
+          : GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.7, // حالت عمودی و پینترستی
+              ),
               itemCount: filteredImages.length,
               itemBuilder: (context, index) {
                 final item = filteredImages[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ImageDetailsScreen(
+                          imageItem: item,
+                          currentUserName: widget.userName,
+                        ),
+                      ),
+                    ).then((_) => setState(() {}));
+                  },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ImageDetailsScreen(
-                                imageItem: item,
-                                currentUserName: widget.userName,
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            item.imageUrl,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) => Container(
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.broken_image,
+                                color: Colors.grey,
                               ),
                             ),
-                          ).then((_) => setState(() {}));
-                        },
-                        child: Image.network(
-                          item.imageUrl,
-                          height: 220,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => Container(
-                            height: 220,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.broken_image, size: 50),
                           ),
                         ),
                       ),
-                      ListTile(
-                        title: Text(
-                          item.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(item.caption),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            GestureDetector(
-                              onTap: () => _toggleLike(item),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    item.isLikedByMe
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    color: item.isLikedByMe
-                                        ? Colors.red
-                                        : Colors.grey[600],
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text('${item.likes}'),
-                                ],
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Row(
-                              children: [
-                                const Icon(Icons.chat_bubble_outline, size: 16),
-                                const SizedBox(width: 4),
-                                Text('${item.comments.length}'),
-                              ],
+                          ),
+                          GestureDetector(
+                            onTap: () => _toggleLike(item),
+                            child: Icon(
+                              item.isLikedByMe
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 16,
+                              color: item.isLikedByMe
+                                  ? Colors.red
+                                  : Colors.black54,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${item.likes}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          if (widget.onImageDeleted != null)
+                            GestureDetector(
+                              onTap: () => widget.onImageDeleted!(item),
+                              child: const Padding(
+                                padding: EdgeInsets.only(left: 6.0),
+                                child: Icon(
+                                  Icons.more_horiz,
+                                  size: 16,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
