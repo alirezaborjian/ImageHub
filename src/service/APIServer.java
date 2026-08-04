@@ -1,6 +1,7 @@
 package service;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import model.*;
@@ -66,7 +67,7 @@ public class APIServer {
         @Override
         public void run() {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
                 String inputLine;
                 if ((inputLine = in.readLine()) != null) {
@@ -109,6 +110,34 @@ public class APIServer {
                         break;
                     }
 
+                    case "getAllImages": {
+                        JsonArray imgArray = new JsonArray();
+                        for (Image img : allImages) {
+                            JsonObject imgObj = new JsonObject();
+                            imgObj.addProperty("name", img.getTitle() != null ? img.getTitle() : "");
+                            imgObj.addProperty("caption", "");
+
+                            String base64Content = "";
+                            if (img.getImagePath() != null) {
+                                try {
+                                    byte[] fileBytes = Files.readAllBytes(Paths.get(img.getImagePath()));
+                                    base64Content = Base64.getEncoder().encodeToString(fileBytes);
+                                } catch (IOException e) {
+                                    base64Content = "";
+                                }
+                            }
+
+                            imgObj.addProperty("imageUrl", base64Content);
+                            imgObj.addProperty("likes", img.getLikes() != null ? img.getLikes().size() : 0);
+                            imgArray.add(imgObj);
+                        }
+
+                        response.addProperty("statusCode", 200);
+                        response.addProperty("message", "Images retrieved successfully.");
+                        response.add("payload", imgArray);
+                        break;
+                    }
+
                     case "uploadImage": {
                         String imgName = request.get("name").getAsString();
                         String caption = request.has("caption") ? request.get("caption").getAsString() : "";
@@ -127,8 +156,10 @@ public class APIServer {
                             break;
                         }
 
+                        String cleanBase64 = base64Data.contains(",") ? base64Data.split(",")[1] : base64Data;
+
                         String imgPath = PICS_DIR + imgName + ".jpg";
-                        byte[] imageBytes = Base64.getDecoder().decode(base64Data);
+                        byte[] imageBytes = Base64.getDecoder().decode(cleanBase64);
                         Files.write(Paths.get(imgPath), imageBytes);
 
                         String newId = String.valueOf(allImages.size() + 1);
@@ -138,7 +169,7 @@ public class APIServer {
                         JsonObject imgObj = new JsonObject();
                         imgObj.addProperty("name", image.getTitle());
                         imgObj.addProperty("caption", caption);
-                        imgObj.addProperty("imageUrl", imgPath);
+                        imgObj.addProperty("imageUrl", cleanBase64);
 
                         response.addProperty("statusCode", 200);
                         response.addProperty("message", "Image uploaded successfully.");

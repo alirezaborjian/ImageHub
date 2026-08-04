@@ -27,44 +27,48 @@ public class Image {
         this.comments = new ArrayList<>();
     }
 
-    public String getId() { 
-        return id; 
-    }
-    
-    public void setId(String id) { 
-        this.id = id; 
+    public String getId() {
+        return id;
     }
 
-    public String getTitle() { 
-        return title; 
-    }
-    
-    public void setTitle(String title) { 
-        this.title = title; 
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getPath() { 
-        return path; 
-    }
-    
-    public void setPath(String path) { 
-        this.path = path; 
+    public String getTitle() {
+        return title;
     }
 
-    public String getOwnerUsername() { 
-        return ownerUsername; 
-    }
-    
-    public void setOwnerUsername(String ownerUsername) { 
-        this.ownerUsername = ownerUsername; 
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public String getUploadDate() { 
-        return uploadDate; 
+    public String getPath() {
+        return path;
     }
-    
-    public void setUploadDate(String uploadDate) { 
-        this.uploadDate = uploadDate; 
+
+    public String getImagePath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getOwnerUsername() {
+        return ownerUsername;
+    }
+
+    public void setOwnerUsername(String ownerUsername) {
+        this.ownerUsername = ownerUsername;
+    }
+
+    public String getUploadDate() {
+        return uploadDate;
+    }
+
+    public void setUploadDate(String uploadDate) {
+        this.uploadDate = uploadDate;
     }
 
     public List<String> getLikes() {

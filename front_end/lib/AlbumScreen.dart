@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
 import 'UploadScreen.dart';
@@ -256,6 +257,66 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
     );
   }
 
+  Widget _buildImageWidget(String data) {
+    String cleanData = data.trim().replaceAll('\n', '').replaceAll('\r', '');
+
+    if (cleanData.isEmpty) {
+      return Container(
+        color: Colors.grey[200],
+        child: const Center(
+          child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+        ),
+      );
+    }
+
+    if (!cleanData.startsWith('http://') && !cleanData.startsWith('https://')) {
+      try {
+        final base64Str = cleanData.contains(',') ? cleanData.split(',').last : cleanData;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[200],
+              child: const Center(
+                child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+              ),
+            );
+          },
+        );
+      } catch (_) {
+        return Container(
+          color: Colors.grey[200],
+          child: const Center(
+            child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+          ),
+        );
+      }
+    }
+
+    String formattedUrl = cleanData
+        .replaceAll('localhost', '10.0.2.2')
+        .replaceAll('127.0.0.1', '10.0.2.2');
+
+    return Image.network(
+      formattedUrl,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Colors.grey[200],
+          child: const Center(
+            child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -291,6 +352,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,
+                childAspectRatio: 0.75,
               ),
               itemCount: widget.album.images.length,
               itemBuilder: (context, index) {
@@ -299,7 +361,10 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
                   onLongPress: () => _showImageOptions(img),
                   child: Card(
                     clipBehavior: Clip.antiAlias,
-                    child: Image.network(img.imageUrl, fit: BoxFit.cover),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: _buildImageWidget(img.imageUrl),
                   ),
                 );
               },

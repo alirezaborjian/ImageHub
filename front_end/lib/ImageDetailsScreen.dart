@@ -41,7 +41,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
       if (response['statusCode'] == 200) {
         setState(() {
           widget.imageItem.comments.add(
-            CommentModel(userName: widget.currentUserName, text: commentText),
+            CommentModel(username: widget.currentUserName, text: commentText),
           );
         });
         _commentController.clear();
@@ -91,8 +91,12 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
       }
     }
 
+    String formattedUrl = cleanUrl
+        .replaceAll('localhost', '10.0.2.2')
+        .replaceAll('127.0.0.1', '10.0.2.2');
+
     return Image.network(
-      cleanUrl,
+      formattedUrl,
       width: double.infinity,
       height: 300,
       fit: BoxFit.cover,
@@ -158,7 +162,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(
-                          c.userName,
+                          c.username,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(c.text),

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'UploadScreen.dart';
 import 'AlbumScreen.dart';
@@ -28,7 +29,7 @@ class ImageModel {
     return ImageModel(
       name: json['name'] ?? '',
       caption: json['caption'] ?? '',
-      imageUrl: json['imageUrl'] ?? '',
+      imageUrl: json['imageUrl'] ?? json['base64Data'] ?? json['data'] ?? '',
       likes: json['likes'] ?? 0,
       tags: tagsList.map((e) => e.toString()).toList(),
       comments: commentsList.map((e) => CommentModel.fromJson(e)).toList(),
@@ -44,7 +45,7 @@ class CommentModel {
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {
     return CommentModel(
-      username: json['username'] ?? '',
+      username: json['username'] ?? json['userName'] ?? '',
       text: json['text'] ?? '',
     );
   }
@@ -164,40 +165,62 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Widget _buildImageWidget(String url) {
-    if (url.trim().isEmpty) {
-      return Container(
-        color: Colors.grey[200],
-        child: const Center(
-          child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
-        ),
+  Widget _buildImageWidget(String data) {
+    if (data.isEmpty) {
+      return _buildPlaceholder();
+    }
+
+    String cleanData = data.replaceAll(RegExp(r'\s+'), '');
+
+    if (cleanData.startsWith('http://') || cleanData.startsWith('https://')) {
+      String formattedUrl = cleanData
+          .replaceAll('localhost', '10.0.2.2')
+          .replaceAll('127.0.0.1', '10.0.2.2');
+
+      return Image.network(
+        formattedUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
       );
     }
 
-    String formattedUrl = url
-        .trim()
-        .replaceAll('\n', '')
-        .replaceAll('\r', '')
-        .replaceAll('localhost', '10.0.2.2')
-        .replaceAll('127.0.0.1', '10.0.2.2');
+    try {
+      String base64Str = cleanData;
+      if (cleanData.contains(',')) {
+        base64Str = cleanData.split(',').last;
+      }
 
-    return Image.network(
-      formattedUrl,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: Colors.grey[200],
-          child: const Center(
-            child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
-          ),
-        );
-      },
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
+      int missingPadding = base64Str.length % 4;
+      if (missingPadding > 0) {
+        base64Str += '=' * (4 - missingPadding);
+      }
+
+      final bytes = base64Decode(base64Str);
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+      );
+    } catch (e) {
+      debugPrint("Base64 Decode Error: $e");
+      return _buildPlaceholder();
+    }
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: Colors.grey[200],
+      child: const Center(
+        child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+      ),
     );
   }
 
