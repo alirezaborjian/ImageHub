@@ -8,7 +8,7 @@ import model.User;
 import model.Image;
 
 public class AlbumService {
-    private List<Image> allImages;
+    private final List<Image> allImages;
 
     public enum SortBy {
         NAME,
@@ -21,34 +21,59 @@ public class AlbumService {
     }
 
     public Album createAlbum(User user, String title) {
-        boolean exists = user.getAlbums().stream().anyMatch(a -> a.getName().equalsIgnoreCase(title));
-        if (exists) return null;
+        if (user == null || title == null || title.trim().isEmpty()) {
+            return null;
+        }
+
+        boolean exists = user.getAlbums().stream()
+                .anyMatch(a -> a.getName() != null && a.getName().equalsIgnoreCase(title.trim()));
+        
+        if (exists) {
+            return null;
+        }
 
         String newId = String.valueOf(user.getAlbums().size() + 1);
-        Album album = new Album(newId, title, user.getUserName());
+        Album album = new Album(newId, title.trim(), user.getUserName());
         user.getAlbums().add(album);
         return album;
     }
 
     public void deleteAlbum(User user, Album album) {
-        user.getAlbums().remove(album);
+        if (user != null && album != null) {
+            user.getAlbums().remove(album);
+        }
     }
 
     public List<Image> sortImages(List<Image> imagesToSort, SortBy sortBy) {
+        if (imagesToSort == null) {
+            return List.of();
+        }
+
         Comparator<Image> comparator;
 
         switch (sortBy) {
             case NAME:
-                comparator = Comparator.comparing(Image::getTitle);
+                comparator = Comparator.comparing(
+                    Image::getTitle, 
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)
+                );
                 break;
             case DATE:
-                comparator = Comparator.comparing(Image::getUploadDate).reversed();
+                comparator = Comparator.comparing(
+                    Image::getUploadDate, 
+                    Comparator.nullsLast(Comparator.naturalOrder())
+                ).reversed();
                 break;
             case LIKES:
-                comparator = Comparator.comparingInt((Image img) -> img.getLikes().size()).reversed();
+                comparator = Comparator.comparingInt(
+                    (Image img) -> img.getLikes() != null ? img.getLikes().size() : 0
+                ).reversed();
                 break;
             default:
-                comparator = Comparator.comparing(Image::getTitle);
+                comparator = Comparator.comparing(
+                    Image::getTitle, 
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)
+                );
         }
 
         return imagesToSort.stream()

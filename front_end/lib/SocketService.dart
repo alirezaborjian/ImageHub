@@ -49,15 +49,22 @@ class SocketService {
       await _socket!.flush();
 
       Completer<Map<String, dynamic>> completer = Completer();
-      List<int> buffer = [];
 
-      var subscription = _socket!.listen(
-        (data) {
-          buffer.addAll(data);
-          if (buffer.contains(10)) {
-            String responseStr = utf8.decode(buffer).trim();
-            if (!completer.isCompleted) {
-              completer.complete(jsonDecode(responseStr));
+      late StreamSubscription subscription;
+      subscription = _socket!
+          .cast<List<int>>()
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .listen(
+        (line) {
+          if (!completer.isCompleted && line.trim().isNotEmpty) {
+            try {
+              completer.complete(jsonDecode(line));
+            } catch (e) {
+              completer.complete({
+                'statusCode': 500,
+                'message': 'Invalid JSON response from server',
+              });
             }
           }
         },
@@ -69,17 +76,28 @@ class SocketService {
             });
           }
         },
+        onDone: () {
+          _isConnected = false;
+        },
       );
 
       final result = await completer.future.timeout(
         const Duration(seconds: 10),
+        onTimeout: () {
+          return {'statusCode': 408, 'message': 'Request timed out'};
+        },
       );
+
       await subscription.cancel();
-      _isConnected = false;
       return result;
     } catch (e) {
       _isConnected = false;
       return {'statusCode': 500, 'message': e.toString()};
     }
+  }
+
+  void disconnect() {
+    _socket?.destroy();
+    _isConnected = false;
   }
 }

@@ -8,6 +8,7 @@ import model.Image;
 
 import java.io.*;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,11 +19,11 @@ public class DatabaseManager {
 
     public static synchronized void saveData(List<User> users, List<Image> allImages) {
         try {
-            try (Writer writer = new FileWriter(USERS_FILE)) {
+            try (Writer writer = new OutputStreamWriter(new FileOutputStream(USERS_FILE), StandardCharsets.UTF-8)) {
                 gson.toJson(users != null ? users : new ArrayList<>(), writer);
             }
 
-            try (Writer writer = new FileWriter(IMAGES_FILE)) {
+            try (Writer writer = new OutputStreamWriter(new FileOutputStream(IMAGES_FILE), StandardCharsets.UTF-8)) {
                 gson.toJson(allImages != null ? allImages : new ArrayList<>(), writer);
             }
         } catch (IOException e) {
@@ -32,30 +33,32 @@ public class DatabaseManager {
 
     public static synchronized List<User> loadUsers() {
         File file = new File(USERS_FILE);
-        if (!file.exists()) {
+        if (!file.exists() || file.length() == 0) {
             return new ArrayList<>();
         }
 
-        try (Reader reader = new FileReader(file)) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF-8)) {
             Type userListType = new TypeToken<ArrayList<User>>() {}.getType();
             List<User> loadedUsers = gson.fromJson(reader, userListType);
             return loadedUsers != null ? loadedUsers : new ArrayList<>();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return new ArrayList<>();
         }
     }
 
     public static synchronized List<Image> loadImages() {
         File file = new File(IMAGES_FILE);
-        if (!file.exists()) {
+        if (!file.exists() || file.length() == 0) {
             return new ArrayList<>();
         }
 
-        try (Reader reader = new FileReader(file)) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF-8)) {
             Type imageListType = new TypeToken<ArrayList<Image>>() {}.getType();
             List<Image> loadedImages = gson.fromJson(reader, imageListType);
             return loadedImages != null ? loadedImages : new ArrayList<>();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return new ArrayList<>();
         }
     }

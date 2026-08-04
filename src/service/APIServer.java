@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,9 +31,9 @@ public class APIServer {
     private static final String PICS_DIR = "pictures/";
 
     public static void main(String[] args) {
-        users = DatabaseManager.loadUsers();
-        allImages = DatabaseManager.loadImages();
-        bannedUsers = new HashSet<>();
+        users = Collections.synchronizedList(DatabaseManager.loadUsers());
+        allImages = Collections.synchronizedList(DatabaseManager.loadImages());
+        bannedUsers = Collections.synchronizedSet(new HashSet<>());
 
         userService = new UserService();
         imageService = new ImageService(allImages);
@@ -45,6 +46,7 @@ public class APIServer {
         }
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("ImageHub APIServer started on port " + PORT);
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 new Thread(new ClientHandler(clientSocket)).start();
@@ -55,7 +57,7 @@ public class APIServer {
     }
 
     private static class ClientHandler implements Runnable {
-        private Socket socket;
+        private final Socket socket;
 
         public ClientHandler(Socket socket) {
             this.socket = socket;
@@ -64,7 +66,7 @@ public class APIServer {
         @Override
         public void run() {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
                 String inputLine;
                 if ((inputLine = in.readLine()) != null) {
@@ -80,21 +82,25 @@ public class APIServer {
             JsonObject response = new JsonObject();
             try {
                 JsonObject request = JsonParser.parseString(jsonRequest).getAsJsonObject();
+                if (!request.has("action")) {
+                    response.addProperty("statusCode", 400);
+                    response.addProperty("message", "Action parameters missing.");
+                    return gson.toJson(response);
+                }
+
                 String action = request.get("action").getAsString();
 
                 switch (action) {
                     case "signup": {
-                        String sUser = request.get("username").getAsString();
-                        String sPass = request.get("password").getAsString();
-                        String regResult = userService.registerUser(sUser, sPass, "");
-                        return regResult;
+                        String sUser = request.has("username") ? request.get("username").getAsString() : "";
+                        String sPass = request.has("password") ? request.get("password").getAsString() : "";
+                        return userService.registerUser(sUser, sPass, "", users);
                     }
 
                     case "login": {
-                        String lUser = request.get("username").getAsString();
-                        String lPass = request.get("password").getAsString();
-                        String loginResult = userService.loginUser(lUser, lPass);
-                        return loginResult;
+                        String lUser = request.has("username") ? request.get("username").getAsString() : "";
+                        String lPass = request.has("password") ? request.get("password").getAsString() : "";
+                        return userService.loginUser(lUser, lPass, users);
                     }
 
                     case "logout": {
@@ -105,12 +111,13 @@ public class APIServer {
 
                     case "uploadImage": {
                         String imgName = request.get("name").getAsString();
-                        String caption = request.get("caption").getAsString();
+                        String caption = request.has("caption") ? request.get("caption").getAsString() : "";
                         String base64Data = request.get("base64Data").getAsString();
                         String uName = request.has("username") ? request.get("username").getAsString() : "";
 
                         User u = users.stream()
-                                .filter(user -> user.getUserName().equalsIgnoreCase(uName))
+                                .filter(user -> user.getUserName() != null
+                                        && user.getUserName().equalsIgnoreCase(uName.trim()))
                                 .findFirst()
                                 .orElse(null);
 
@@ -125,7 +132,7 @@ public class APIServer {
                         Files.write(Paths.get(imgPath), imageBytes);
 
                         String newId = String.valueOf(allImages.size() + 1);
-                        Image image = new Image(newId, imgName, imgPath, uName, LocalDate.now().toString());
+                        Image image = new Image(newId, imgName, imgPath, u.getUserName(), LocalDate.now().toString());
                         imageService.uploadImage(u, image);
 
                         JsonObject imgObj = new JsonObject();
@@ -143,13 +150,14 @@ public class APIServer {
                         String delImgUser = request.get("username").getAsString();
                         String delImgName = request.get("name").getAsString();
                         User delUserObj = users.stream()
-                                .filter(usr -> usr.getUserName().equalsIgnoreCase(delImgUser))
+                                .filter(usr -> usr.getUserName() != null
+                                        && usr.getUserName().equalsIgnoreCase(delImgUser.trim()))
                                 .findFirst()
                                 .orElse(null);
 
                         if (delUserObj != null) {
                             Image imgToDelete = allImages.stream()
-                                    .filter(i -> i.getTitle().equals(delImgName))
+                                    .filter(i -> i.getTitle() != null && i.getTitle().equals(delImgName))
                                     .findFirst()
                                     .orElse(null);
 
@@ -176,7 +184,7 @@ public class APIServer {
                         String targetImgName = request.get("name").getAsString();
                         String likerUser = request.get("username").getAsString();
                         Image imgToLike = allImages.stream()
-                                .filter(img -> img.getTitle().equals(targetImgName))
+                                .filter(img -> img.getTitle() != null && img.getTitle().equals(targetImgName))
                                 .findFirst()
                                 .orElse(null);
 
@@ -196,7 +204,7 @@ public class APIServer {
                         String commenter = request.get("username").getAsString();
                         String text = request.get("text").getAsString();
                         Image imgToComment = allImages.stream()
-                                .filter(img -> img.getTitle().equals(cImgName))
+                                .filter(img -> img.getTitle() != null && img.getTitle().equals(cImgName))
                                 .findFirst()
                                 .orElse(null);
 
@@ -215,7 +223,8 @@ public class APIServer {
                         String albUser = request.get("username").getAsString();
                         String albTitle = request.get("title").getAsString();
                         User owner = users.stream()
-                                .filter(usr -> usr.getUserName().equalsIgnoreCase(albUser))
+                                .filter(usr -> usr.getUserName() != null
+                                        && usr.getUserName().equalsIgnoreCase(albUser.trim()))
                                 .findFirst()
                                 .orElse(null);
                         if (owner != null) {
@@ -238,12 +247,13 @@ public class APIServer {
                         String delUser = request.get("username").getAsString();
                         String delTitle = request.get("title").getAsString();
                         User dOwner = users.stream()
-                                .filter(usr -> usr.getUserName().equalsIgnoreCase(delUser))
+                                .filter(usr -> usr.getUserName() != null
+                                        && usr.getUserName().equalsIgnoreCase(delUser.trim()))
                                 .findFirst()
                                 .orElse(null);
                         if (dOwner != null) {
                             Album targetAlbum = dOwner.getAlbums().stream()
-                                    .filter(a -> a.getName().equalsIgnoreCase(delTitle))
+                                    .filter(a -> a.getName() != null && a.getName().equalsIgnoreCase(delTitle))
                                     .findFirst()
                                     .orElse(null);
                             if (targetAlbum != null) {
@@ -266,16 +276,18 @@ public class APIServer {
                         String remTitle = request.get("title").getAsString();
                         String remImgName = request.get("name").getAsString();
                         User remOwner = users.stream()
-                                .filter(usr -> usr.getUserName().equalsIgnoreCase(remUser))
+                                .filter(usr -> usr.getUserName() != null
+                                        && usr.getUserName().equalsIgnoreCase(remUser.trim()))
                                 .findFirst()
                                 .orElse(null);
                         if (remOwner != null) {
                             Album remAlb = remOwner.getAlbums().stream()
-                                    .filter(a -> a.getName().equalsIgnoreCase(remTitle))
+                                    .filter(a -> a.getName() != null && a.getName().equalsIgnoreCase(remTitle))
                                     .findFirst()
                                     .orElse(null);
                             if (remAlb != null) {
-                                remAlb.getImages().removeIf(i -> i.getTitle().equals(remImgName));
+                                remAlb.getImages()
+                                        .removeIf(i -> i.getTitle() != null && i.getTitle().equals(remImgName));
                                 response.addProperty("statusCode", 200);
                                 response.addProperty("message", "Image removed from album.");
                             } else {
@@ -295,13 +307,20 @@ public class APIServer {
                         String destTitle = request.get("targetAlbum").getAsString();
                         String targetImg = request.get("imageName").getAsString();
                         User mOwner = users.stream()
-                                .filter(usr -> usr.getUserName().equalsIgnoreCase(mUser))
+                                .filter(usr -> usr.getUserName() != null
+                                        && usr.getUserName().equalsIgnoreCase(mUser.trim()))
                                 .findFirst()
                                 .orElse(null);
                         if (mOwner != null) {
-                            Album srcAlb = mOwner.getAlbums().stream().filter(a -> a.getName().equalsIgnoreCase(srcTitle)).findFirst().orElse(null);
-                            Album destAlb = mOwner.getAlbums().stream().filter(a -> a.getName().equalsIgnoreCase(destTitle)).findFirst().orElse(null);
-                            Image target = allImages.stream().filter(i -> i.getTitle().equals(targetImg)).findFirst().orElse(null);
+                            Album srcAlb = mOwner.getAlbums().stream()
+                                    .filter(a -> a.getName() != null && a.getName().equalsIgnoreCase(srcTitle))
+                                    .findFirst().orElse(null);
+                            Album destAlb = mOwner.getAlbums().stream()
+                                    .filter(a -> a.getName() != null && a.getName().equalsIgnoreCase(destTitle))
+                                    .findFirst().orElse(null);
+                            Image target = allImages.stream()
+                                    .filter(i -> i.getTitle() != null && i.getTitle().equals(targetImg)).findFirst()
+                                    .orElse(null);
                             if (srcAlb != null && destAlb != null && target != null) {
                                 boolean moved = albumService.moveImageOtherAlbum(srcAlb, destAlb, target);
                                 if (moved) {

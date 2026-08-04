@@ -12,6 +12,11 @@ public class Image {
     private List<String> likes;
     private List<Comment> comments;
 
+    public Image() {
+        this.likes = new ArrayList<>();
+        this.comments = new ArrayList<>();
+    }
+
     public Image(String id, String title, String path, String ownerUsername, String uploadDate) {
         this.id = id;
         this.title = title;
@@ -22,28 +27,65 @@ public class Image {
         this.comments = new ArrayList<>();
     }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getId() { 
+        return id; 
+    }
+    
+    public void setId(String id) { 
+        this.id = id; 
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public String getTitle() { 
+        return title; 
+    }
+    
+    public void setTitle(String title) { 
+        this.title = title; 
+    }
 
-    public String getPath() { return path; }
-    public void setPath(String path) { this.path = path; }
+    public String getPath() { 
+        return path; 
+    }
+    
+    public void setPath(String path) { 
+        this.path = path; 
+    }
 
-    public String getOwnerUsername() { return ownerUsername; }
-    public void setOwnerUsername(String ownerUsername) { this.ownerUsername = ownerUsername; }
+    public String getOwnerUsername() { 
+        return ownerUsername; 
+    }
+    
+    public void setOwnerUsername(String ownerUsername) { 
+        this.ownerUsername = ownerUsername; 
+    }
 
-    public String getUploadDate() { return uploadDate; }
-    public void setUploadDate(String uploadDate) { this.uploadDate = uploadDate; }
+    public String getUploadDate() { 
+        return uploadDate; 
+    }
+    
+    public void setUploadDate(String uploadDate) { 
+        this.uploadDate = uploadDate; 
+    }
 
     public List<String> getLikes() {
-        if (likes == null) likes = new ArrayList<>();
+        if (likes == null) {
+            likes = new ArrayList<>();
+        }
         return likes;
     }
 
+    public void setLikes(List<String> likes) {
+        this.likes = likes;
+    }
+
     public List<Comment> getComments() {
-        if (comments == null) comments = new ArrayList<>();
+        if (comments == null) {
+            comments = new ArrayList<>();
+        }
         return comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
     }
 }

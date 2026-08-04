@@ -1,6 +1,12 @@
 package model;
 
 public class Admin extends User {
+
+    public Admin() {
+        super();
+        this.setAdmin(true);
+    }
+
     public Admin(String userName, String password) {
         super(userName, password);
         this.setAdmin(true);

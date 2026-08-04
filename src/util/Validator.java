@@ -7,6 +7,10 @@ public class Validator {
 
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$");
 
+    public static boolean isValidUsername(String username) {
+        return username != null && !username.trim().isEmpty();
+    }
+
     public static boolean isValidPassword(String username, String password) {
         if (password == null || password.isEmpty()) {
             return false;
@@ -25,6 +29,7 @@ public class Validator {
         if (user == null) {
             return false;
         }
-        return isValidPassword(user.getUserName(), user.getPassword());
+        String username = user.getUserName() != null ? user.getUserName() : user.getUsername();
+        return isValidPassword(username, user.getPassword());
     }
 }

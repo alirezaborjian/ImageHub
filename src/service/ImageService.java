@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ImageService {
-    private List<Image> allImages;
+    private final List<Image> allImages;
 
     public enum SearchType {
         NAME,
@@ -19,11 +19,19 @@ public class ImageService {
     }
 
     public void uploadImage(User user, Image image) {
-        user.getUploadImages().add(image);
-        allImages.add(image);
+        if (user != null && image != null) {
+            user.getUploadImages().add(image);
+            if (!allImages.contains(image)) {
+                allImages.add(image);
+            }
+        }
     }
 
     public void likeImage(Image image, String username) {
+        if (image == null || username == null) {
+            return;
+        }
+
         if (!image.getLikes().contains(username)) {
             image.getLikes().add(username);
         } else {
@@ -32,7 +40,9 @@ public class ImageService {
     }
 
     public void addComment(Image image, String userName, String text) {
-        image.getComments().add(new Comment(userName, text));
+        if (image != null && userName != null && text != null) {
+            image.getComments().add(new Comment(userName, text));
+        }
     }
 
     public List<Image> search(SearchType type, String keyword) {
@@ -40,7 +50,7 @@ public class ImageService {
             return allImages;
         }
 
-        String lowerKeyword = keyword.toLowerCase();
+        String lowerKeyword = keyword.toLowerCase().trim();
 
         switch (type) {
             case NAME:
@@ -61,11 +71,12 @@ public class ImageService {
 
             case ALL:
                 return allImages.stream()
-                        .filter(img ->
-                                (img.getTitle() != null && img.getTitle().toLowerCase().contains(lowerKeyword)) ||
-                                        (img.getComments() != null && img.getComments().stream().anyMatch(c -> c.getText() != null && c.getText().toLowerCase().contains(lowerKeyword))) ||
-                                        (img.getUploadDate() != null && img.getUploadDate().contains(keyword))
-                        )
+                        .filter(img -> (img.getTitle() != null && img.getTitle().toLowerCase().contains(lowerKeyword))
+                                ||
+                                (img.getComments() != null && img.getComments().stream().anyMatch(
+                                        c -> c.getText() != null && c.getText().toLowerCase().contains(lowerKeyword)))
+                                ||
+                                (img.getUploadDate() != null && img.getUploadDate().contains(keyword)))
                         .collect(Collectors.toList());
 
             default:

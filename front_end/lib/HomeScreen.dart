@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'ImageDetailsScreen.dart';
 import 'SocketService.dart';
@@ -82,16 +83,45 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     if (response['statusCode'] == 200) {
-      setState(() {
-        if (item.isLikedByMe) {
-          item.likes--;
-          item.isLikedByMe = false;
-        } else {
-          item.likes++;
-          item.isLikedByMe = true;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (item.isLikedByMe) {
+            item.likes--;
+            item.isLikedByMe = false;
+          } else {
+            item.likes++;
+            item.isLikedByMe = true;
+          }
+        });
+      }
     }
+  }
+
+  Widget _buildImageWidget(String url) {
+    if (url.startsWith('data:image') || url.length > 500) {
+      try {
+        final base64Str = url.contains(',') ? url.split(',').last : url;
+        return Image.memory(
+          base64Decode(base64Str),
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (c, e, s) => Container(
+            color: Colors.grey[300],
+            child: const Icon(Icons.broken_image, color: Colors.grey),
+          ),
+        );
+      } catch (_) {}
+    }
+
+    return Image.network(
+      url,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (c, e, s) => Container(
+        color: Colors.grey[300],
+        child: const Icon(Icons.broken_image, color: Colors.grey),
+      ),
+    );
   }
 
   @override
@@ -193,18 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: Image.network(
-                            item.imageUrl,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) => Container(
-                              color: Colors.grey[300],
-                              child: const Icon(
-                                Icons.broken_image,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
+                          child: _buildImageWidget(item.imageUrl),
                         ),
                       ),
                       const SizedBox(height: 6),
