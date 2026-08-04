@@ -113,28 +113,47 @@ public class APIServer {
                     case "getAllImages": {
                         JsonArray imgArray = new JsonArray();
                         for (Image img : allImages) {
-                            JsonObject imgObj = new JsonObject();
-                            imgObj.addProperty("name", img.getTitle() != null ? img.getTitle() : "");
-                            imgObj.addProperty("caption", "");
-
-                            String base64Content = "";
-                            if (img.getImagePath() != null) {
-                                try {
-                                    byte[] fileBytes = Files.readAllBytes(Paths.get(img.getImagePath()));
-                                    base64Content = Base64.getEncoder().encodeToString(fileBytes);
-                                } catch (IOException e) {
-                                    base64Content = "";
-                                }
-                            }
-
-                            imgObj.addProperty("imageUrl", base64Content);
-                            imgObj.addProperty("likes", img.getLikes() != null ? img.getLikes().size() : 0);
+                            JsonObject imgObj = buildImageJsonObject(img);
                             imgArray.add(imgObj);
                         }
 
                         response.addProperty("statusCode", 200);
                         response.addProperty("message", "Images retrieved successfully.");
                         response.add("payload", imgArray);
+                        break;
+                    }
+
+                    case "getUserAlbums": {
+                        String userName = request.has("username") ? request.get("username").getAsString() : "";
+                        User u = users.stream()
+                                .filter(usr -> usr.getUserName() != null && usr.getUserName().equalsIgnoreCase(userName.trim()))
+                                .findFirst()
+                                .orElse(null);
+
+                        if (u != null) {
+                            JsonArray albumsArray = new JsonArray();
+                            if (u.getAlbums() != null) {
+                                for (Album alb : u.getAlbums()) {
+                                    JsonObject albObj = new JsonObject();
+                                    albObj.addProperty("title", alb.getName() != null ? alb.getName() : "");
+
+                                    JsonArray albImgs = new JsonArray();
+                                    if (alb.getImages() != null) {
+                                        for (Image img : alb.getImages()) {
+                                            albImgs.add(buildImageJsonObject(img));
+                                        }
+                                    }
+                                    albObj.add("images", albImgs);
+                                    albumsArray.add(albObj);
+                                }
+                            }
+                            response.addProperty("statusCode", 200);
+                            response.addProperty("message", "User albums retrieved.");
+                            response.add("payload", albumsArray);
+                        } else {
+                            response.addProperty("statusCode", 404);
+                            response.addProperty("message", "User not found.");
+                        }
                         break;
                     }
 
@@ -164,6 +183,7 @@ public class APIServer {
 
                         String newId = String.valueOf(allImages.size() + 1);
                         Image image = new Image(newId, imgName, imgPath, u.getUserName(), LocalDate.now().toString());
+                        image.setCaption(caption);
                         imageService.uploadImage(u, image);
 
                         JsonObject imgObj = new JsonObject();
@@ -245,7 +265,6 @@ public class APIServer {
                     case "addComment": {
                         String cImgName = request.get("name").getAsString();
                         String commenter = request.get("username").getAsString();
-                        // بررسی برای پشتیبانی از هر دو کلید "comment" و "text"
                         String text = request.has("comment") ? request.get("comment").getAsString()
                                 : (request.has("text") ? request.get("text").getAsString() : "");
 
@@ -275,7 +294,6 @@ public class APIServer {
                                 .orElse(null);
 
                         if (imgToTag != null) {
-                            // اضافه کردن تگ به مدل و متد مربوطه
                             imageService.addTag(imgToTag, tagText);
                             response.addProperty("statusCode", 200);
                             response.addProperty("message", "Tag added successfully.");
@@ -417,9 +435,56 @@ public class APIServer {
                 response.addProperty("message", e.getMessage());
             }
 
-            // ذخیره‌سازی خودکار تمام تغییرات (شامل لایک، کامنت و تگ) در فایل‌های JSON
             DatabaseManager.saveData(users, allImages);
             return gson.toJson(response);
+        }
+
+        private JsonObject buildImageJsonObject(Image img) {
+            JsonObject imgObj = new JsonObject();
+            imgObj.addProperty("name", img.getTitle() != null ? img.getTitle() : "");
+            imgObj.addProperty("caption", img.getCaption() != null ? img.getCaption() : "");
+
+            String base64Content = "";
+            if (img.getImagePath() != null) {
+                try {
+                    byte[] fileBytes = Files.readAllBytes(Paths.get(img.getImagePath()));
+                    base64Content = Base64.getEncoder().encodeToString(fileBytes);
+                } catch (IOException e) {
+                    base64Content = "";
+                }
+            }
+
+            imgObj.addProperty("imageUrl", base64Content);
+            imgObj.addProperty("likes", img.getLikes() != null ? img.getLikes().size() : 0);
+
+            JsonArray likedUsersArray = new JsonArray();
+            if (img.getLikes() != null) {
+                for (String liker : img.getLikes()) {
+                    likedUsersArray.add(liker);
+                }
+            }
+            imgObj.add("likedUsernames", likedUsersArray);
+
+            JsonArray tagsArray = new JsonArray();
+            if (img.getTags() != null) {
+                for (String tag : img.getTags()) {
+                    tagsArray.add(tag);
+                }
+            }
+            imgObj.add("tags", tagsArray);
+
+            JsonArray commentsArray = new JsonArray();
+            if (img.getComments() != null) {
+                for (Comment c : img.getComments()) {
+                    JsonObject cObj = new JsonObject();
+                    cObj.addProperty("username", c.getUserName() != null ? c.getUserName() : "");
+                    cObj.addProperty("text", c.getText() != null ? c.getText() : "");
+                    commentsArray.add(cObj);
+                }
+            }
+            imgObj.add("comments", commentsArray);
+
+            return imgObj;
         }
     }
 }

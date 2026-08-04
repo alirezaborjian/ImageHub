@@ -6,25 +6,39 @@ import java.util.List;
 public class Image {
     private String id;
     private String title;
-    private String path;
-    private String ownerUsername;
+    private String imagePath;
+    private String uploader;
     private String uploadDate;
+    private String caption; 
     private List<String> likes;
+    private List<String> tags;
     private List<Comment> comments;
 
     public Image() {
+        this.caption = "";
         this.likes = new ArrayList<>();
+        this.tags = new ArrayList<>();
         this.comments = new ArrayList<>();
     }
 
-    public Image(String id, String title, String path, String ownerUsername, String uploadDate) {
+    public Image(String id, String title, String imagePath, String uploader, String uploadDate) {
         this.id = id;
         this.title = title;
-        this.path = path;
-        this.ownerUsername = ownerUsername;
+        this.imagePath = imagePath;
+        this.uploader = uploader;
         this.uploadDate = uploadDate;
+        this.caption = "";
         this.likes = new ArrayList<>();
+        this.tags = new ArrayList<>();
         this.comments = new ArrayList<>();
+    }
+
+    public String getCaption() {
+        return caption;
+    }
+
+    public void setCaption(String caption) {
+        this.caption = caption;
     }
 
     public String getId() {
@@ -43,24 +57,20 @@ public class Image {
         this.title = title;
     }
 
-    public String getPath() {
-        return path;
-    }
-
     public String getImagePath() {
-        return path;
+        return imagePath;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
     }
 
-    public String getOwnerUsername() {
-        return ownerUsername;
+    public String getUploader() {
+        return uploader;
     }
 
-    public void setOwnerUsername(String ownerUsername) {
-        this.ownerUsername = ownerUsername;
+    public void setUploader(String uploader) {
+        this.uploader = uploader;
     }
 
     public String getUploadDate() {
@@ -82,6 +92,17 @@ public class Image {
         this.likes = likes;
     }
 
+    public List<String> getTags() {
+        if (tags == null) {
+            tags = new ArrayList<>();
+        }
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
     public List<Comment> getComments() {
         if (comments == null) {
             comments = new ArrayList<>();
@@ -92,9 +113,4 @@ public class Image {
     public void setComments(List<Comment> comments) {
         this.comments = comments;
     }
-
-    private List<String> tags = new ArrayList<>();
-
-    public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags; }
 }

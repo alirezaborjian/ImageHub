@@ -54,13 +54,15 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
           port: 8085,
         );
         if (!connected) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Cannot connect to Java Server. Check if server is running.',
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Cannot connect to Java Server. Check if server is running.',
+                ),
               ),
-            ),
-          );
+            );
+          }
           return;
         }
       }
@@ -198,10 +200,12 @@ class _LoginAndSignUpState extends State<LoginAndSignUp> {
                     style: const TextStyle(color: Colors.white),
                     validator: (v) {
                       if (!isLoginMode) {
-                        if (v == null || v.isEmpty)
+                        if (v == null || v.isEmpty) {
                           return 'Please confirm your password.';
-                        if (v != _passwordController.text)
+                        }
+                        if (v != _passwordController.text) {
                           return 'Passwords do not match.';
+                        }
                       }
                       return null;
                     },

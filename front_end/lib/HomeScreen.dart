@@ -27,11 +27,18 @@ class ImageModel {
     var tagsList = json['tags'] as List? ?? [];
     var commentsList = json['comments'] as List? ?? [];
 
+    int likesCount = 0;
+    if (json['likes'] is int) {
+      likesCount = json['likes'];
+    } else if (json['likes'] is List) {
+      likesCount = (json['likes'] as List).length;
+    }
+
     return ImageModel(
       name: json['name'] ?? '',
       caption: json['caption'] ?? '',
       imageUrl: json['imageUrl'] ?? json['base64Data'] ?? json['data'] ?? '',
-      likes: json['likes'] ?? 0,
+      likes: likesCount,
       tags: tagsList.map((e) => e.toString()).toList(),
       comments: commentsList.map((e) => CommentModel.fromJson(e)).toList(),
     );
@@ -66,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ImageModel> _allImages = [];
   List<AlbumModel> _userAlbums = [];
   bool _isLoading = true;
-  String _sortBy = 'none'; // 'none', 'likes'
+  String _sortBy = 'none';
 
   @override
   void initState() {
@@ -118,9 +125,11 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     if (response['statusCode'] == 200) {
-      setState(() {
-        _allImages.removeWhere((item) => item.name == img.name);
-      });
+      if (mounted) {
+        setState(() {
+          _allImages.removeWhere((item) => item.name == img.name);
+        });
+      }
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -250,7 +259,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                // دکمه حذف سطل زباله روی هر کارت
                 Positioned(
                   top: 4,
                   right: 4,
@@ -280,7 +288,6 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(_selectedIndex == 0 ? 'Explore' : 'Albums'),
         actions: _selectedIndex == 0
             ? [
-                // منوی مرتب‌سازی
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.sort),
                   onSelected: _sortImages,
@@ -308,8 +315,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   allImages: _allImages,
                   onCreateAlbum: (title) => setState(() => _userAlbums.add(AlbumModel(title: title, images: []))),
                   onDeleteAlbum: (album) => setState(() => _userAlbums.remove(album)),
-                  onRemoveImageFromAlbum: (album, img) {},
-                  onMoveImageToAnotherAlbum: (s, t, img) {},
+                  onRemoveImageFromAlbum: (album, img) {
+                    setState(() {
+                      album.images.removeWhere((i) => i.name == img.name);
+                    });
+                  },
+                  onMoveImageToAnotherAlbum: (sourceTitle, targetTitle, img) {
+                    setState(() {
+                      final sourceAlb = _userAlbums.firstWhere((a) => a.title == sourceTitle);
+                      sourceAlb.images.removeWhere((i) => i.name == img.name);
+
+                      final targetAlb = _userAlbums.firstWhere((a) => a.title == targetTitle);
+                      if (!targetAlb.images.any((i) => i.name == img.name)) {
+                        targetAlb.images.add(img);
+                      }
+                    });
+                  },
                   onUpdateCover: (a, c) {},
                 )),
       floatingActionButton: _selectedIndex == 0

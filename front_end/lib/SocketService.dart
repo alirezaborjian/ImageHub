@@ -43,14 +43,14 @@ class SocketService {
       }
     }
 
+    Completer<Map<String, dynamic>> completer = Completer();
+    StreamSubscription? subscription;
+
     try {
       String jsonStr = '${jsonEncode(requestData)}\n';
       _socket!.write(jsonStr);
       await _socket!.flush();
 
-      Completer<Map<String, dynamic>> completer = Completer();
-
-      late StreamSubscription subscription;
       subscription = _socket!
           .cast<List<int>>()
           .transform(utf8.decoder)
@@ -59,7 +59,7 @@ class SocketService {
         (line) {
           if (!completer.isCompleted && line.trim().isNotEmpty) {
             try {
-              completer.complete(jsonDecode(line));
+              completer.complete(jsonDecode(line) as Map<String, dynamic>);
             } catch (e) {
               completer.complete({
                 'statusCode': 500,
@@ -78,6 +78,12 @@ class SocketService {
         },
         onDone: () {
           _isConnected = false;
+          if (!completer.isCompleted) {
+            completer.complete({
+              'statusCode': 500,
+              'message': 'Connection closed by server.',
+            });
+          }
         },
       );
 
@@ -91,13 +97,32 @@ class SocketService {
       await subscription.cancel();
       return result;
     } catch (e) {
+      await subscription?.cancel();
       _isConnected = false;
       return {'statusCode': 500, 'message': e.toString()};
     }
   }
 
+  Future<Map<String, dynamic>> moveImage({
+    required String username,
+    required String sourceAlbum,
+    required String targetAlbum,
+    required String imageName,
+  }) async {
+    final request = {
+      'action': 'moveImage',
+      'username': username,
+      'sourceAlbum': sourceAlbum,
+      'targetAlbum': targetAlbum,
+      'imageName': imageName,
+    };
+
+    return await sendRequest(request);
+  }
+
   void disconnect() {
     _socket?.destroy();
+    _socket = null;
     _isConnected = false;
   }
 }

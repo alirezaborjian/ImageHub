@@ -15,7 +15,11 @@ import java.util.List;
 public class DatabaseManager {
     private static final String USERS_FILE = "UsersDatabase.json";
     private static final String IMAGES_FILE = "ImagesDatabase.json";
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    private static final Gson gson = new GsonBuilder()
+            .setPrettyPrinting()
+            .disableHtmlEscaping()
+            .create();
 
     public static synchronized void saveData(List<User> users, List<Image> allImages) {
         try {

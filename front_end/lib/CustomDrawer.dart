@@ -17,7 +17,6 @@ class CustomDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // خواندن ایمن بدون استفاده از علامت !
     final userProvider = UserProvider.of(context);
     final userName = userProvider?.userName ?? 'User';
 
@@ -43,7 +42,9 @@ class CustomDrawer extends StatelessWidget {
             title: const Text('Home'),
             onTap: () {
               Navigator.pop(context);
-              if (onNavigateToHome != null) onNavigateToHome!();
+              if (onNavigateToHome != null) {
+                onNavigateToHome!();
+              }
             },
           ),
           ListTile(
@@ -51,7 +52,9 @@ class CustomDrawer extends StatelessWidget {
             title: const Text('Albums'),
             onTap: () {
               Navigator.pop(context);
-              if (onNavigateToAlbums != null) onNavigateToAlbums!();
+              if (onNavigateToAlbums != null) {
+                onNavigateToAlbums!();
+              }
             },
           ),
           const Divider(),
@@ -62,9 +65,17 @@ class CustomDrawer extends StatelessWidget {
               await SocketService().sendRequest({'action': 'logout'});
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('isLoggedIn', false);
-              if (onLogout != null) onLogout!();
+              
+              if (onLogout != null) {
+                onLogout!();
+              }
+              
               if (context.mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (route) => false,
+                );
               }
             },
           ),
