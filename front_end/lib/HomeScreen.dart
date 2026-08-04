@@ -98,6 +98,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildImageWidget(String url) {
+    if (url.isEmpty) {
+      return Container(
+        color: Colors.grey[300],
+        child: const Icon(Icons.broken_image, color: Colors.grey),
+      );
+    }
+
     if (url.startsWith('data:image') || url.length > 500) {
       try {
         final base64Str = url.contains(',') ? url.split(',').last : url;

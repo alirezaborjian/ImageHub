@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
 import 'SocketService.dart';
@@ -51,6 +52,45 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
     }
   }
 
+  Widget _buildImageWidget(String url) {
+    if (url.isEmpty) {
+      return Container(
+        height: 300,
+        color: Colors.grey[200],
+        child: const Icon(Icons.broken_image),
+      );
+    }
+
+    if (url.startsWith('data:image') || url.length > 500) {
+      try {
+        final base64Str = url.contains(',') ? url.split(',').last : url;
+        return Image.memory(
+          base64Decode(base64Str),
+          width: double.infinity,
+          height: 300,
+          fit: BoxFit.cover,
+          errorBuilder: (c, e, s) => Container(
+            height: 300,
+            color: Colors.grey[200],
+            child: const Icon(Icons.broken_image),
+          ),
+        );
+      } catch (_) {}
+    }
+
+    return Image.network(
+      url,
+      width: double.infinity,
+      height: 300,
+      fit: BoxFit.cover,
+      errorBuilder: (c, e, s) => Container(
+        height: 300,
+        color: Colors.grey[200],
+        child: const Icon(Icons.broken_image),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.imageItem;
@@ -60,17 +100,7 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(
-              item.imageUrl,
-              width: double.infinity,
-              height: 300,
-              fit: BoxFit.cover,
-              errorBuilder: (c, e, s) => Container(
-                height: 300,
-                color: Colors.grey[200],
-                child: const Icon(Icons.broken_image),
-              ),
-            ),
+            _buildImageWidget(item.imageUrl),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -123,7 +153,6 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                   const SizedBox(height: 15),
                   Form(
                     key: _formKey,
-
                     child: Row(
                       children: [
                         Expanded(
@@ -135,8 +164,8 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
                             ),
                             validator: (value) =>
                                 value == null || value.trim().isEmpty
-                                ? 'Comment cannot be empty'
-                                : null,
+                                    ? 'Comment cannot be empty'
+                                    : null,
                           ),
                         ),
                         IconButton(

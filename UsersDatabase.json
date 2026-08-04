@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "userName": "alireza",
+    "password": "ASas12345",
+    "email": "",
+    "isAdmin": false,
+    "uploadImages": [
+      {
+        "id": "1",
+        "title": "AFLJAFD",
+        "path": "pictures/AFLJAFD.jpg",
+        "ownerUsername": "alireza",
+        "uploadDate": "2026-08-04",
+        "likes": [
+          "alireza"
+        ],
+        "comments": []
+      }
+    ],
+    "albums": []
+  }
+]
