@@ -4,12 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'HomeScreen.dart';
 import 'SocketService.dart';
-import 'UserProvider.dart';
 
 class UploadScreen extends StatefulWidget {
+  final String currentUserName;
   final Function(ImageModel) onImageUploaded;
 
-  const UploadScreen({super.key, required this.onImageUploaded});
+  const UploadScreen({
+    super.key,
+    required this.currentUserName,
+    required this.onImageUploaded,
+  });
 
   @override
   State<UploadScreen> createState() => _UploadScreenState();
@@ -49,15 +53,13 @@ class _UploadScreenState extends State<UploadScreen> {
       setState(() => _isLoading = true);
 
       final socketService = SocketService();
-      final userProvider = UserProvider.of(context);
-      final currentUserName = userProvider?.userName ?? "User";
 
       Map<String, dynamic> request = {
         'action': 'uploadImage',
         'name': _nameController.text.trim(),
         'caption': _captionController.text.trim(),
         'base64Data': _base64Data,
-        'username': currentUserName,
+        'username': widget.currentUserName,
       };
 
       final response = await socketService.sendRequest(request);
@@ -83,7 +85,11 @@ class _UploadScreenState extends State<UploadScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Upload failed')),
+            SnackBar(
+              content: Text(
+                response['message'] ?? 'User not found or upload failed',
+              ),
+            ),
           );
         }
       }
@@ -119,6 +125,7 @@ class _UploadScreenState extends State<UploadScreen> {
                                 children: [
                                   Icon(
                                     Icons.add_a_photo,
+
                                     size: 50,
                                     color: Colors.grey,
                                   ),

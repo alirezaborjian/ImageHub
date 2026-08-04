@@ -149,8 +149,11 @@ class _MainWrapperState extends State<MainWrapper> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          UploadScreen(onImageUploaded: _addImage),
+                      builder: (context) => UploadScreen(
+                        currentUserName: _userName,
+
+                        onImageUploaded: _addImage,
+                      ),
                     ),
                   );
                 },
@@ -167,6 +170,7 @@ class _MainWrapperState extends State<MainWrapper> {
             AlbumScreen(
               albums: _myAlbums,
               allImages: _allImages,
+              userName: _userName,
               onCreateAlbum: _createAlbum,
               onRemoveImageFromAlbum: _removeImageFromAlbum,
               onUpdateCover: _updateAlbumCover,

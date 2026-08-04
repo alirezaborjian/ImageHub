@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
 import 'UploadScreen.dart';
 import 'SocketService.dart';
-import 'UserProvider.dart';
 
 class AlbumModel {
   final String title;
@@ -14,6 +13,7 @@ class AlbumModel {
 
 class AlbumScreen extends StatefulWidget {
   final List<AlbumModel> albums;
+  final String userName;
   final Function(String) onCreateAlbum;
   final Function(AlbumModel, ImageModel) onRemoveImageFromAlbum;
   final Function(AlbumModel, String) onUpdateCover;
@@ -24,6 +24,7 @@ class AlbumScreen extends StatefulWidget {
   const AlbumScreen({
     super.key,
     required this.albums,
+    required this.userName,
     required this.onCreateAlbum,
     required this.onRemoveImageFromAlbum,
     required this.onUpdateCover,
@@ -49,10 +50,9 @@ class _AlbumScreenState extends State<AlbumScreen> {
     final title = _albumTitleController.text.trim();
     if (title.isEmpty) return;
 
-    final userName = UserProvider.of(context)?.userName ?? "User";
     final response = await SocketService().sendRequest({
       'action': 'createAlbum',
-      'username': userName,
+      'username': widget.userName,
       'title': title,
     });
 
@@ -60,14 +60,21 @@ class _AlbumScreenState extends State<AlbumScreen> {
       widget.onCreateAlbum(title);
       _albumTitleController.clear();
       if (mounted) Navigator.pop(context);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Could not create album'),
+          ),
+        );
+      }
     }
   }
 
   void _handleDeleteAlbum(AlbumModel album) async {
-    final userName = UserProvider.of(context)?.userName ?? "User";
     final response = await SocketService().sendRequest({
       'action': 'deleteAlbum',
-      'username': userName,
+      'username': widget.userName,
       'title': album.title,
     });
 
@@ -131,6 +138,7 @@ class _AlbumScreenState extends State<AlbumScreen> {
                           album: album,
                           allAlbums: widget.albums,
                           allImages: widget.allImages,
+                          userName: widget.userName,
                           onRemoveImage: (img) =>
                               widget.onRemoveImageFromAlbum(album, img),
                           onMoveImage: (target, img) => widget
@@ -150,6 +158,7 @@ class AlbumDetailsScreen extends StatefulWidget {
   final AlbumModel album;
   final List<AlbumModel> allAlbums;
   final List<ImageModel> allImages;
+  final String userName;
   final Function(ImageModel) onRemoveImage;
   final Function(AlbumModel, ImageModel) onMoveImage;
 
@@ -158,6 +167,7 @@ class AlbumDetailsScreen extends StatefulWidget {
     required this.album,
     required this.allAlbums,
     required this.allImages,
+    required this.userName,
     required this.onRemoveImage,
     required this.onMoveImage,
   });
@@ -247,6 +257,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => UploadScreen(
+                    currentUserName: widget.userName,
                     onImageUploaded: (newImg) {
                       setState(() {
                         widget.album.images.add(newImg);

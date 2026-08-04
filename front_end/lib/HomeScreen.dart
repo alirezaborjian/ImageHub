@@ -102,6 +102,29 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: CircleAvatar(
+                radius: 16,
+                backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
+                child: Text(
+                  widget.userName.isNotEmpty
+                      ? widget.userName[0].toUpperCase()
+                      : 'U',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          },
+        ),
         title: isSearching
             ? TextField(
                 controller: searchController,
@@ -147,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.7, // حالت عمودی و پینترستی
+                childAspectRatio: 0.7,
               ),
               itemCount: filteredImages.length,
               itemBuilder: (context, index) {
