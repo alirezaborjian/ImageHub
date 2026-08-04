@@ -28,9 +28,9 @@ class _UploadScreenState extends State<UploadScreen> {
   String? _base64Data;
   bool _isLoading = false;
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: source);
 
     if (pickedFile != null) {
       final bytes = await File(pickedFile.path).readAsBytes();
@@ -39,6 +39,32 @@ class _UploadScreenState extends State<UploadScreen> {
         _base64Data = base64Encode(bytes);
       });
     }
+  }
+
+  void _showImageSourceOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Wrap(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Gallery'),
+            onTap: () {
+              Navigator.pop(context);
+              _pickImage(ImageSource.gallery);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Camera'),
+            onTap: () {
+              Navigator.pop(context);
+              _pickImage(ImageSource.camera);
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   void _submitUpload() async {
@@ -109,7 +135,7 @@ class _UploadScreenState extends State<UploadScreen> {
                 child: Column(
                   children: [
                     GestureDetector(
-                      onTap: _pickImage,
+                      onTap: _showImageSourceOptions,
                       child: Container(
                         height: 200,
                         width: double.infinity,
@@ -125,12 +151,11 @@ class _UploadScreenState extends State<UploadScreen> {
                                 children: [
                                   Icon(
                                     Icons.add_a_photo,
-
                                     size: 50,
                                     color: Colors.grey,
                                   ),
                                   SizedBox(height: 8),
-                                  Text('Tap to select an image'),
+                                  Text('Tap to select from Camera or Gallery'),
                                 ],
                               ),
                       ),

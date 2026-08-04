@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'HomeScreen.dart';
 import 'UploadScreen.dart';
 import 'SocketService.dart';
+import 'CustomDrawer.dart';
 
 class AlbumModel {
   final String title;
@@ -86,7 +87,18 @@ class _AlbumScreenState extends State<AlbumScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const CustomDrawer(),
       appBar: AppBar(
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          },
+        ),
         title: const Text('My Albums'),
         actions: [
           IconButton(

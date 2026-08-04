@@ -1,23 +1,16 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'ImageDetailsScreen.dart';
+import 'UploadScreen.dart';
+import 'AlbumScreen.dart';
 import 'SocketService.dart';
-
-class CommentModel {
-  final String userName;
-  final String text;
-
-  CommentModel({required this.userName, required this.text});
-}
+import 'CustomDrawer.dart';
 
 class ImageModel {
   final String name;
   final String caption;
   final String imageUrl;
   int likes;
-  final List<String> tags;
-  final List<CommentModel> comments;
-  bool isLikedByMe;
+  List<String> tags;
+  List<CommentModel> comments;
 
   ImageModel({
     required this.name,
@@ -26,148 +19,240 @@ class ImageModel {
     required this.likes,
     required this.tags,
     required this.comments,
-    this.isLikedByMe = false,
   });
+
+  factory ImageModel.fromJson(Map<String, dynamic> json) {
+    var tagsList = json['tags'] as List? ?? [];
+    var commentsList = json['comments'] as List? ?? [];
+
+    return ImageModel(
+      name: json['name'] ?? '',
+      caption: json['caption'] ?? '',
+      imageUrl: json['imageUrl'] ?? '',
+      likes: json['likes'] ?? 0,
+      tags: tagsList.map((e) => e.toString()).toList(),
+      comments: commentsList.map((e) => CommentModel.fromJson(e)).toList(),
+    );
+  }
+}
+
+class CommentModel {
+  final String username;
+  final String text;
+
+  CommentModel({required this.username, required this.text});
+
+  factory CommentModel.fromJson(Map<String, dynamic> json) {
+    return CommentModel(
+      username: json['username'] ?? '',
+      text: json['text'] ?? '',
+    );
+  }
 }
 
 class HomeScreen extends StatefulWidget {
-  final List<ImageModel> images;
-  final String userName;
-  final Function(ImageModel)? onImageDeleted;
+  final String currentUserName;
 
-  const HomeScreen({
-    super.key,
-    required this.images,
-    required this.userName,
-    this.onImageDeleted,
-  });
+  const HomeScreen({super.key, required this.currentUserName});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late List<ImageModel> allImages;
-  List<ImageModel> filteredImages = [];
-  bool isSearching = false;
-  final TextEditingController searchController = TextEditingController();
-  String selectedSortOption = 'Default';
+  int _selectedIndex = 0;
+  List<ImageModel> _allImages = [];
+  List<AlbumModel> _userAlbums = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    allImages = widget.images;
-    filteredImages = List.from(allImages);
+    _fetchInitialData();
   }
 
-  void _filterImages(String query) {
+  void _fetchInitialData() async {
+    final socketService = SocketService();
+
+    final imagesResponse = await socketService.sendRequest({'action': 'getAllImages'});
+    final albumsResponse = await socketService.sendRequest({
+      'action': 'getUserAlbums',
+      'username': widget.currentUserName,
+    });
+
+    List<ImageModel> fetchedImages = [];
+    if (imagesResponse['statusCode'] == 200 && imagesResponse['payload'] != null) {
+      final List list = imagesResponse['payload'];
+      fetchedImages = list.map((item) => ImageModel.fromJson(item)).toList();
+    }
+
+    List<AlbumModel> fetchedAlbums = [];
+    if (albumsResponse['statusCode'] == 200 && albumsResponse['payload'] != null) {
+      final List list = albumsResponse['payload'];
+      fetchedAlbums = list.map((item) {
+        final String title = item['title'] ?? '';
+        final List imgsJson = item['images'] ?? [];
+        final List<ImageModel> albumImgs =
+            imgsJson.map((x) => ImageModel.fromJson(x)).toList();
+        return AlbumModel(title: title, images: albumImgs);
+      }).toList();
+    }
+
+    if (mounted) {
+      setState(() {
+        _allImages = fetchedImages;
+        _userAlbums = fetchedAlbums;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _onItemTapped(int index) {
     setState(() {
-      if (query.isEmpty) {
-        filteredImages = List.from(allImages);
-      } else {
-        filteredImages = allImages
-            .where(
-              (img) =>
-                  img.name.toLowerCase().contains(query.toLowerCase()) ||
-                  img.caption.toLowerCase().contains(query.toLowerCase()),
-            )
-            .toList();
-      }
-      _applySort(selectedSortOption);
+      _selectedIndex = index;
     });
   }
 
-  void _applySort(String criteria) {
+  void _addNewImage(ImageModel newImg) {
     setState(() {
-      selectedSortOption = criteria;
-      if (criteria == 'Most Liked') {
-        filteredImages.sort((a, b) => b.likes.compareTo(a.likes));
-      } else if (criteria == 'Alphabetical') {
-        filteredImages.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      } else if (criteria == 'Default') {
-        if (searchController.text.isEmpty) {
-          filteredImages = List.from(allImages);
-        } else {
-          filteredImages = allImages
-              .where(
-                (img) =>
-                    img.name.toLowerCase().contains(searchController.text.toLowerCase()) ||
-                    img.caption.toLowerCase().contains(searchController.text.toLowerCase()),
-              )
-              .toList();
-        }
-      }
+      _allImages.add(newImg);
     });
   }
 
-  void _toggleLike(ImageModel item) async {
+  void _createAlbum(String title) {
+    setState(() {
+      _userAlbums.add(AlbumModel(title: title, images: []));
+    });
+  }
+
+  void _deleteAlbum(AlbumModel album) {
+    setState(() {
+      _userAlbums.remove(album);
+    });
+  }
+
+  void _removeImageFromAlbum(AlbumModel album, ImageModel img) async {
     final response = await SocketService().sendRequest({
-      'action': 'likeImage',
-      'name': item.name,
-      'username': widget.userName,
+      'action': 'removeImageFromAlbum',
+      'username': widget.currentUserName,
+      'title': album.title,
+      'imageName': img.name,
     });
 
     if (response['statusCode'] == 200) {
-      if (mounted) {
-        setState(() {
-          if (item.isLikedByMe) {
-            item.likes--;
-            item.isLikedByMe = false;
-          } else {
-            item.likes++;
-            item.isLikedByMe = true;
-          }
-          if (selectedSortOption == 'Most Liked') {
-            _applySort('Most Liked');
-          }
-        });
-      }
+      setState(() {
+        album.images.removeWhere((item) => item.name == img.name);
+      });
+    }
+  }
+
+  void _moveImageToAnotherAlbum(
+      AlbumModel sourceAlbum, AlbumModel targetAlbum, ImageModel img) async {
+    final response = await SocketService().sendRequest({
+      'action': 'moveImage',
+      'username': widget.currentUserName,
+      'sourceAlbum': sourceAlbum.title,
+      'targetAlbum': targetAlbum.title,
+      'imageName': img.name,
+    });
+
+    if (response['statusCode'] == 200) {
+      setState(() {
+        sourceAlbum.images.removeWhere((item) => item.name == img.name);
+        targetAlbum.images.add(img);
+      });
     }
   }
 
   Widget _buildImageWidget(String url) {
     if (url.trim().isEmpty) {
       return Container(
-        color: Colors.grey[300],
-        child: const Icon(Icons.broken_image, color: Colors.grey),
+        color: Colors.grey[200],
+        child: const Center(
+          child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+        ),
       );
     }
 
-    String cleanUrl = url.trim().replaceAll('\n', '').replaceAll('\r', '');
-
-    bool isBase64 = cleanUrl.startsWith('data:image') ||
-        (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://'));
-
-    if (isBase64) {
-      try {
-        final base64Str = cleanUrl.contains(',') ? cleanUrl.split(',').last : cleanUrl;
-        return Image.memory(
-          base64Decode(base64Str),
-          width: double.infinity,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey[300],
-              child: const Icon(Icons.broken_image, color: Colors.grey),
-            );
-          },
-        );
-      } catch (_) {
-        return Container(
-          color: Colors.grey[300],
-          child: const Icon(Icons.broken_image, color: Colors.grey),
-        );
-      }
-    }
+    String formattedUrl = url
+        .trim()
+        .replaceAll('\n', '')
+        .replaceAll('\r', '')
+        .replaceAll('localhost', '10.0.2.2')
+        .replaceAll('127.0.0.1', '10.0.2.2');
 
     return Image.network(
-      cleanUrl,
-      width: double.infinity,
+      formattedUrl,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
         return Container(
-          color: Colors.grey[300],
-          child: const Icon(Icons.broken_image, color: Colors.grey),
+          color: Colors.grey[200],
+          child: const Center(
+            child: Icon(Icons.broken_image, color: Colors.grey, size: 36),
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+  }
+
+  Widget _buildGalleryView() {
+    if (_allImages.isEmpty) {
+      return const Center(child: Text('No images available.'));
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(12),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: _allImages.length,
+      itemBuilder: (context, index) {
+        final img = _allImages[index];
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _buildImageWidget(img.imageUrl),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        img.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.favorite, size: 16, color: Colors.red),
+                        const SizedBox(width: 4),
+                        Text('${img.likes}'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -175,180 +260,66 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    allImages = widget.images;
     return Scaffold(
-      backgroundColor: Colors.white,
+      drawer: const CustomDrawer(),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: Builder(
           builder: (context) {
             return IconButton(
-              icon: CircleAvatar(
-                radius: 16,
-                backgroundColor: const Color.fromRGBO(143, 148, 251, 1),
-                child: Text(
-                  widget.userName.isNotEmpty
-                      ? widget.userName[0].toUpperCase()
-                      : 'U',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              icon: const Icon(Icons.menu),
               onPressed: () {
                 Scaffold.of(context).openDrawer();
               },
             );
           },
         ),
-        title: isSearching
-            ? TextField(
-                controller: searchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search Pinterest...',
-                  border: InputBorder.none,
-                ),
-                onChanged: _filterImages,
-              )
-            : const Text(
-                'Explore',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.sort, color: Colors.black),
-            onSelected: _applySort,
-            itemBuilder: (BuildContext context) {
-              return {'Default', 'Most Liked', 'Alphabetical'}.map((String choice) {
-                return PopupMenuItem<String>(
-                  value: choice,
-                  child: Row(
-                    children: [
-                      if (selectedSortOption == choice)
-                        const Icon(Icons.check, size: 18, color: Color.fromRGBO(143, 148, 251, 1))
-                      else
-                        const SizedBox(width: 18),
-                      const SizedBox(width: 8),
-                      Text(choice),
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-          ),
-          IconButton(
-            icon: Icon(
-              isSearching ? Icons.close : Icons.search,
-              color: Colors.black,
-            ),
-            onPressed: () {
-              setState(() {
-                if (isSearching) {
-                  isSearching = false;
-                  searchController.clear();
-                  _filterImages('');
-                } else {
-                  isSearching = true;
-                }
-              });
-            },
-          ),
-        ],
+        title: Text(_selectedIndex == 0 ? 'Explore' : 'Albums'),
       ),
-      body: filteredImages.isEmpty
-          ? const Center(child: Text('No pins found.'))
-          : GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.7,
-              ),
-              itemCount: filteredImages.length,
-              itemBuilder: (context, index) {
-                final item = filteredImages[index];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ImageDetailsScreen(
-                          imageItem: item,
-                          currentUserName: widget.userName,
-                        ),
-                      ),
-                    ).then((_) => setState(() {}));
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: _buildImageWidget(item.imageUrl),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => _toggleLike(item),
-                            child: Icon(
-                              item.isLikedByMe
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              size: 16,
-                              color: item.isLikedByMe
-                                  ? Colors.red
-                                  : Colors.black54,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${item.likes}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          if (widget.onImageDeleted != null)
-                            GestureDetector(
-                              onTap: () => widget.onImageDeleted!(item),
-                              child: const Padding(
-                                padding: EdgeInsets.only(left: 6.0),
-                                child: Icon(
-                                  Icons.more_horiz,
-                                  size: 16,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : (_selectedIndex == 0
+              ? _buildGalleryView()
+              : AlbumScreen(
+                  albums: _userAlbums,
+                  userName: widget.currentUserName,
+                  allImages: _allImages,
+                  onCreateAlbum: _createAlbum,
+                  onDeleteAlbum: _deleteAlbum,
+                  onRemoveImageFromAlbum: _removeImageFromAlbum,
+                  onMoveImageToAnotherAlbum: _moveImageToAnotherAlbum,
+                  onUpdateCover: (album, coverUrl) {},
+                )),
+      floatingActionButton: _selectedIndex == 0
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UploadScreen(
+                      currentUserName: widget.currentUserName,
+                      onImageUploaded: _addNewImage,
+                    ),
                   ),
                 );
               },
-            ),
+              icon: const Icon(Icons.add_a_photo),
+              label: const Text('Add Photo'),
+            )
+          : null,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.photo_library),
+            label: 'Gallery',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.collections_bookmark),
+            label: 'Albums',
+          ),
+        ],
+      ),
     );
   }
 }
