@@ -6,16 +6,8 @@
     "ownerUsername": "alireza",
     "uploadDate": "2026-08-04",
     "likes": [],
-    "comments": []
-  },
-  {
-    "id": "3",
-    "title": "alireza",
-    "path": "pictures/alireza.jpg",
-    "ownerUsername": "alireza",
-    "uploadDate": "2026-08-04",
-    "likes": [],
-    "comments": []
+    "comments": [],
+    "tags": []
   },
   {
     "id": "4",
@@ -24,7 +16,8 @@
     "ownerUsername": "alireza",
     "uploadDate": "2026-08-04",
     "likes": [],
-    "comments": []
+    "comments": [],
+    "tags": []
   },
   {
     "id": "5",
@@ -33,7 +26,8 @@
     "ownerUsername": "alireza",
     "uploadDate": "2026-08-04",
     "likes": [],
-    "comments": []
+    "comments": [],
+    "tags": []
   },
   {
     "id": "6",
@@ -42,7 +36,8 @@
     "ownerUsername": "alireza",
     "uploadDate": "2026-08-04",
     "likes": [],
-    "comments": []
+    "comments": [],
+    "tags": []
   },
   {
     "id": "7",
@@ -51,18 +46,8 @@
     "ownerUsername": "alireza",
     "uploadDate": "2026-08-04",
     "likes": [],
-    "comments": []
-  },
-  {
-    "id": "9",
-    "title": "adsfads",
-    "path": "pictures/adsfads.jpg",
-    "ownerUsername": "alireza",
-    "uploadDate": "2026-08-04",
-    "likes": [
-      "alireza"
-    ],
-    "comments": []
+    "comments": [],
+    "tags": []
   },
   {
     "id": "11",
@@ -71,15 +56,17 @@
     "ownerUsername": "alireza",
     "uploadDate": "2026-08-04",
     "likes": [],
-    "comments": []
+    "comments": [],
+    "tags": []
   },
   {
-    "id": "12",
-    "title": "d;gsjf",
-    "path": "pictures/d;gsjf.jpg",
+    "id": "10",
+    "title": "adsfk",
+    "path": "pictures/adsfk.jpg",
     "ownerUsername": "alireza",
     "uploadDate": "2026-08-04",
     "likes": [],
-    "comments": []
+    "comments": [],
+    "tags": []
   }
 ]

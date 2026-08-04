@@ -1,18 +1,13 @@
 package service;
 
-import model.*;
+import model.Image;
+import model.User;
+
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ImageService {
-    private final List<Image> allImages;
-
-    public enum SearchType {
-        NAME,
-        DATE,
-        COMMENT,
-        ALL
-    }
+    private List<Image> allImages;
 
     public ImageService(List<Image> allImages) {
         this.allImages = allImages;
@@ -20,67 +15,44 @@ public class ImageService {
 
     public void uploadImage(User user, Image image) {
         if (user != null && image != null) {
-            user.getUploadImages().add(image);
-            if (!allImages.contains(image)) {
-                allImages.add(image);
+            allImages.add(image);
+            if (user.getUploadImages() == null) {
+                user.setUploadImages(new ArrayList<>());
             }
+            user.getUploadImages().add(image);
         }
     }
 
     public void likeImage(Image image, String username) {
-        if (image == null || username == null) {
-            return;
-        }
-
-        if (!image.getLikes().contains(username)) {
-            image.getLikes().add(username);
-        } else {
-            image.getLikes().remove(username);
-        }
-    }
-
-    public void addComment(Image image, String userName, String text) {
-        if (image != null && userName != null && text != null) {
-            image.getComments().add(new Comment(userName, text));
+        if (image != null && username != null) {
+            if (image.getLikes() == null) {
+                image.setLikes(new ArrayList<>());
+            }
+            if (image.getLikes().contains(username)) {
+                image.getLikes().remove(username);
+            } else {
+                image.getLikes().add(username);
+            }
         }
     }
 
-    public List<Image> search(SearchType type, String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return allImages;
+    public void addComment(Image image, String username, String commentText) {
+        if (image != null && username != null && commentText != null) {
+            if (image.getComments() == null) {
+                image.setComments(new ArrayList<>());
+            }
+            image.getComments().add(new model.Comment(username, commentText));
         }
+    }
 
-        String lowerKeyword = keyword.toLowerCase().trim();
-
-        switch (type) {
-            case NAME:
-                return allImages.stream()
-                        .filter(img -> img.getTitle() != null && img.getTitle().toLowerCase().contains(lowerKeyword))
-                        .collect(Collectors.toList());
-
-            case COMMENT:
-                return allImages.stream()
-                        .filter(img -> img.getComments() != null && img.getComments().stream()
-                                .anyMatch(c -> c.getText() != null && c.getText().toLowerCase().contains(lowerKeyword)))
-                        .collect(Collectors.toList());
-
-            case DATE:
-                return allImages.stream()
-                        .filter(img -> img.getUploadDate() != null && img.getUploadDate().contains(keyword))
-                        .collect(Collectors.toList());
-
-            case ALL:
-                return allImages.stream()
-                        .filter(img -> (img.getTitle() != null && img.getTitle().toLowerCase().contains(lowerKeyword))
-                                ||
-                                (img.getComments() != null && img.getComments().stream().anyMatch(
-                                        c -> c.getText() != null && c.getText().toLowerCase().contains(lowerKeyword)))
-                                ||
-                                (img.getUploadDate() != null && img.getUploadDate().contains(keyword)))
-                        .collect(Collectors.toList());
-
-            default:
-                return allImages;
+    public void addTag(Image image, String tag) {
+        if (image != null && tag != null && !tag.trim().isEmpty()) {
+            if (image.getTags() == null) {
+                image.setTags(new ArrayList<>());
+            }
+            if (!image.getTags().contains(tag.trim())) {
+                image.getTags().add(tag.trim());
+            }
         }
     }
 }

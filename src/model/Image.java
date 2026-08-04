@@ -92,4 +92,9 @@ public class Image {
     public void setComments(List<Comment> comments) {
         this.comments = comments;
     }
+
+    private List<String> tags = new ArrayList<>();
+
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
 }

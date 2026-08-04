@@ -245,7 +245,10 @@ public class APIServer {
                     case "addComment": {
                         String cImgName = request.get("name").getAsString();
                         String commenter = request.get("username").getAsString();
-                        String text = request.get("text").getAsString();
+                        // بررسی برای پشتیبانی از هر دو کلید "comment" و "text"
+                        String text = request.has("comment") ? request.get("comment").getAsString()
+                                : (request.has("text") ? request.get("text").getAsString() : "");
+
                         Image imgToComment = allImages.stream()
                                 .filter(img -> img.getTitle() != null && img.getTitle().equals(cImgName))
                                 .findFirst()
@@ -255,6 +258,27 @@ public class APIServer {
                             imageService.addComment(imgToComment, commenter, text);
                             response.addProperty("statusCode", 200);
                             response.addProperty("message", "Comment added.");
+                        } else {
+                            response.addProperty("statusCode", 404);
+                            response.addProperty("message", "Image not found.");
+                        }
+                        break;
+                    }
+
+                    case "addTag": {
+                        String tagImgName = request.get("name").getAsString();
+                        String tagText = request.get("tag").getAsString();
+
+                        Image imgToTag = allImages.stream()
+                                .filter(img -> img.getTitle() != null && img.getTitle().equals(tagImgName))
+                                .findFirst()
+                                .orElse(null);
+
+                        if (imgToTag != null) {
+                            // اضافه کردن تگ به مدل و متد مربوطه
+                            imageService.addTag(imgToTag, tagText);
+                            response.addProperty("statusCode", 200);
+                            response.addProperty("message", "Tag added successfully.");
                         } else {
                             response.addProperty("statusCode", 404);
                             response.addProperty("message", "Image not found.");
@@ -392,6 +416,8 @@ public class APIServer {
                 response.addProperty("statusCode", 500);
                 response.addProperty("message", e.getMessage());
             }
+
+            // ذخیره‌سازی خودکار تمام تغییرات (شامل لایک، کامنت و تگ) در فایل‌های JSON
             DatabaseManager.saveData(users, allImages);
             return gson.toJson(response);
         }

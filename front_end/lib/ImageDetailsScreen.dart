@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'HomeScreen.dart';
+import 'dart:convert';
 import 'SocketService.dart';
+import 'HomeScreen.dart'; // برای استفاده از ImageModel و CommentModel
 
 class ImageDetailsScreen extends StatefulWidget {
   final ImageModel imageItem;
@@ -18,187 +18,230 @@ class ImageDetailsScreen extends StatefulWidget {
 }
 
 class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
+  late int _likeCount;
+  late List<CommentModel> _comments;
+  late List<String> _tags;
+  
   final TextEditingController _commentController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _tagController = TextEditingController();
+  bool _isLiked = false;
 
   @override
-  void dispose() {
-    _commentController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _likeCount = widget.imageItem.likes;
+    _comments = List.from(widget.imageItem.comments);
+    _tags = List.from(widget.imageItem.tags);
   }
 
-  void _submitComment() async {
-    if (_formKey.currentState!.validate()) {
-      final commentText = _commentController.text.trim();
+  // ثبت لایک
+  void _toggleLike() async {
+    setState(() {
+      _isLiked = !_isLiked;
+      if (_isLiked) {
+        _likeCount++;
+      } else {
+        _likeCount--;
+      }
+      widget.imageItem.likes = _likeCount;
+    });
 
-      final response = await SocketService().sendRequest({
-        'action': 'addComment',
-        'name': widget.imageItem.name,
-        'username': widget.currentUserName,
-        'text': commentText,
+    await SocketService().sendRequest({
+      'action': 'likeImage',
+      'name': widget.imageItem.name,
+      'username': widget.currentUserName,
+    });
+  }
+
+  // ارسال کامنت جدید
+  void _addComment() async {
+    final text = _commentController.text.trim();
+    if (text.isEmpty) return;
+
+    final newComment = CommentModel(
+      username: widget.currentUserName,
+      text: text,
+    );
+
+    setState(() {
+      _comments.add(newComment);
+      widget.imageItem.comments.add(newComment);
+      _commentController.clear();
+    });
+
+    await SocketService().sendRequest({
+      'action': 'addComment',
+      'name': widget.imageItem.name,
+      'username': widget.currentUserName,
+      'comment': text,
+    });
+  }
+
+  // افزودن تگ جدید
+  void _addTag() async {
+    final tagText = _tagController.text.trim();
+    if (tagText.isEmpty) return;
+
+    if (!_tags.contains(tagText)) {
+      setState(() {
+        _tags.add(tagText);
+        widget.imageItem.tags.add(tagText);
+        _tagController.clear();
       });
 
-      if (response['statusCode'] == 200) {
-        setState(() {
-          widget.imageItem.comments.add(
-            CommentModel(username: widget.currentUserName, text: commentText),
-          );
-        });
-        _commentController.clear();
-        if (mounted) {
-          FocusScope.of(context).unfocus();
-        }
-      }
+      await SocketService().sendRequest({
+        'action': 'addTag',
+        'name': widget.imageItem.name,
+        'tag': tagText,
+      });
     }
   }
 
-  Widget _buildImageWidget(String url) {
-    if (url.trim().isEmpty) {
-      return Container(
-        height: 300,
-        color: Colors.grey[200],
-        child: const Icon(Icons.broken_image),
-      );
+  Widget _buildImageWidget(String data) {
+    if (data.isEmpty) return const Icon(Icons.broken_image, size: 100);
+    String cleanData = data.replaceAll(RegExp(r'\s+'), '');
+
+    if (cleanData.startsWith('http://') || cleanData.startsWith('https://')) {
+      String formattedUrl = cleanData
+          .replaceAll('localhost', '10.0.2.2')
+          .replaceAll('127.0.0.1', '10.0.2.2');
+      return Image.network(formattedUrl, fit: BoxFit.cover);
     }
 
-    String cleanUrl = url.trim().replaceAll('\n', '').replaceAll('\r', '');
-
-    bool isBase64 = cleanUrl.startsWith('data:image') ||
-        (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://'));
-
-    if (isBase64) {
-      try {
-        final base64Str = cleanUrl.contains(',') ? cleanUrl.split(',').last : cleanUrl;
-        return Image.memory(
-          base64Decode(base64Str),
-          width: double.infinity,
-          height: 300,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              height: 300,
-              color: Colors.grey[200],
-              child: const Icon(Icons.broken_image),
-            );
-          },
-        );
-      } catch (_) {
-        return Container(
-          height: 300,
-          color: Colors.grey[200],
-          child: const Icon(Icons.broken_image),
-        );
-      }
+    try {
+      String base64Str = cleanData.contains(',') ? cleanData.split(',').last : cleanData;
+      return Image.memory(base64Decode(base64Str), fit: BoxFit.cover);
+    } catch (e) {
+      return const Icon(Icons.broken_image, size: 100);
     }
-
-    String formattedUrl = cleanUrl
-        .replaceAll('localhost', '10.0.2.2')
-        .replaceAll('127.0.0.1', '10.0.2.2');
-
-    return Image.network(
-      formattedUrl,
-      width: double.infinity,
-      height: 300,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          height: 300,
-          color: Colors.grey[200],
-          child: const Icon(Icons.broken_image),
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.imageItem;
     return Scaffold(
-      appBar: AppBar(title: Text(item.name)),
+      appBar: AppBar(
+        title: Text(widget.imageItem.name),
+      ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildImageWidget(item.imageUrl),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    item.caption,
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    children: item.tags
-                        .map((t) => Chip(label: Text('#$t')))
-                        .toList(),
-                  ),
-                  const Divider(height: 30),
-                  Text(
-                    'Comments (${item.comments.length})',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: item.comments.length,
-                    itemBuilder: (context, idx) {
-                      final c = item.comments[idx];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          c.username,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(c.text),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  Form(
-                    key: _formKey,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _commentController,
-                            decoration: const InputDecoration(
-                              hintText: 'Add a comment...',
-                              border: UnderlineInputBorder(),
-                            ),
-                            validator: (value) =>
-                                value == null || value.trim().isEmpty
-                                    ? 'Comment cannot be empty'
-                                    : null,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.send,
-                            color: Color.fromRGBO(143, 148, 251, 1),
-                          ),
-                          onPressed: _submitComment,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            // عکس
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                height: 300,
+                child: _buildImageWidget(widget.imageItem.imageUrl),
               ),
+            ),
+            const SizedBox(height: 12),
+
+            // اکشن‌ها: لایک و تعداد لایک
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        _isLiked ? Icons.favorite : Icons.favorite_border,
+                        color: Colors.red,
+                        size: 30,
+                      ),
+                      onPressed: _toggleLike,
+                    ),
+                    Text(
+                      '$_likeCount Likes',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            
+            if (widget.imageItem.caption.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                widget.imageItem.caption,
+                style: const TextStyle(fontSize: 15, fontStyle: FontStyle.italic),
+              ),
+            ],
+
+            const Divider(height: 30),
+
+            // بخش تگ‌ها (Tags)
+            const Text('Tags:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8.0,
+              children: [
+                ..._tags.map((tag) => Chip(
+                      label: Text('#$tag'),
+                      backgroundColor: Colors.blue.shade50,
+                    )),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _tagController,
+                    decoration: const InputDecoration(
+                      hintText: 'Add a tag...',
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add_task, color: Colors.blue),
+                  onPressed: _addTag,
+                ),
+              ],
+            ),
+
+            const Divider(height: 30),
+
+            // بخش کامنت‌ها (Comments)
+            const Text('Comments:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _comments.length,
+              itemBuilder: (context, index) {
+                final comment = _comments[index];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    child: Text(comment.username.isNotEmpty ? comment.username[0].toUpperCase() : '?'),
+                  ),
+                  title: Text(comment.username, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(comment.text),
+                );
+              },
+            ),
+
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _commentController,
+                    decoration: const InputDecoration(
+                      hintText: 'Write a comment...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.send, color: Colors.blue),
+                  onPressed: _addComment,
+                ),
+              ],
             ),
           ],
         ),
