@@ -44,11 +44,11 @@ public class UserService {
 
         synchronized (sharedUsers) {
             for (User user : sharedUsers) {
-                if (user.getUserName() != null && 
-                    user.getUserName().equalsIgnoreCase(trimmedUser) && 
-                    user.getPassword() != null && 
-                    user.getPassword().equals(password)) {
-                    
+                if (user.getUserName() != null &&
+                        user.getUserName().equalsIgnoreCase(trimmedUser) &&
+                        user.getPassword() != null &&
+                        user.getPassword().equals(password)) {
+
                     return "{\"statusCode\": 200, \"message\": \"Successfully logged in!\", \"payload\": {\"username\": \"" + user.getUserName() + "\", \"email\": \"" + (user.getEmail() != null ? user.getEmail() : "") + "\"}}";
                 }
             }

@@ -4,6 +4,7 @@ import 'UploadScreen.dart';
 import 'AlbumScreen.dart';
 import 'SocketService.dart';
 import 'CustomDrawer.dart';
+import 'ImageDetailsScreen.dart';
 
 class ImageModel {
   final String name;
@@ -65,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ImageModel> _allImages = [];
   List<AlbumModel> _userAlbums = [];
   bool _isLoading = true;
+  String _sortBy = 'none'; // 'none', 'likes'
 
   @override
   void initState() {
@@ -108,61 +110,35 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _addNewImage(ImageModel newImg) {
-    setState(() {
-      _allImages.add(newImg);
-    });
-  }
-
-  void _createAlbum(String title) {
-    setState(() {
-      _userAlbums.add(AlbumModel(title: title, images: []));
-    });
-  }
-
-  void _deleteAlbum(AlbumModel album) {
-    setState(() {
-      _userAlbums.remove(album);
-    });
-  }
-
-  void _removeImageFromAlbum(AlbumModel album, ImageModel img) async {
+  void _deleteImage(ImageModel img) async {
     final response = await SocketService().sendRequest({
-      'action': 'removeImageFromAlbum',
+      'action': 'deleteImage',
+      'name': img.name,
       'username': widget.currentUserName,
-      'title': album.title,
-      'imageName': img.name,
     });
 
     if (response['statusCode'] == 200) {
       setState(() {
-        album.images.removeWhere((item) => item.name == img.name);
+        _allImages.removeWhere((item) => item.name == img.name);
       });
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Could not delete image')),
+        );
+      }
     }
   }
 
-  void _moveImageToAnotherAlbum(
-      AlbumModel sourceAlbum, AlbumModel targetAlbum, ImageModel img) async {
-    final response = await SocketService().sendRequest({
-      'action': 'moveImage',
-      'username': widget.currentUserName,
-      'sourceAlbum': sourceAlbum.title,
-      'targetAlbum': targetAlbum.title,
-      'imageName': img.name,
+  void _sortImages(String criteria) {
+    setState(() {
+      _sortBy = criteria;
+      if (criteria == 'likes') {
+        _allImages.sort((a, b) => b.likes.compareTo(a.likes));
+      } else if (criteria == 'name') {
+        _allImages.sort((a, b) => a.name.compareTo(b.name));
+      }
     });
-
-    if (response['statusCode'] == 200) {
-      setState(() {
-        sourceAlbum.images.removeWhere((item) => item.name == img.name);
-        targetAlbum.images.add(img);
-      });
-    }
   }
 
   Widget _buildImageWidget(String data) {
@@ -183,24 +159,11 @@ class _HomeScreenState extends State<HomeScreen> {
         width: double.infinity,
         height: double.infinity,
         errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(child: CircularProgressIndicator());
-        },
       );
     }
 
     try {
-      String base64Str = cleanData;
-      if (cleanData.contains(',')) {
-        base64Str = cleanData.split(',').last;
-      }
-
-      int missingPadding = base64Str.length % 4;
-      if (missingPadding > 0) {
-        base64Str += '=' * (4 - missingPadding);
-      }
-
+      String base64Str = cleanData.contains(',') ? cleanData.split(',').last : cleanData;
       final bytes = base64Decode(base64Str);
       return Image.memory(
         bytes,
@@ -210,7 +173,6 @@ class _HomeScreenState extends State<HomeScreen> {
         errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
       );
     } catch (e) {
-      debugPrint("Base64 Decode Error: $e");
       return _buildPlaceholder();
     }
   }
@@ -245,36 +207,65 @@ class _HomeScreenState extends State<HomeScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: _buildImageWidget(img.imageUrl),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ImageDetailsScreen(
+                    imageItem: img,
+                    currentUserName: widget.currentUserName,
+                  ),
+                ),
+              );
+            },
+            child: Stack(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Text(
-                        img.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    Expanded(child: _buildImageWidget(img.imageUrl)),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              img.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              const Icon(Icons.favorite, size: 16, color: Colors.red),
+                              const SizedBox(width: 4),
+                              Text('${img.likes}'),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                    Row(
-                      children: [
-                        const Icon(Icons.favorite, size: 16, color: Colors.red),
-                        const SizedBox(width: 4),
-                        Text('${img.likes}'),
-                      ],
                     ),
                   ],
                 ),
-              ),
-            ],
+                // دکمه حذف سطل زباله روی هر کارت
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    radius: 16,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(Icons.delete, color: Colors.white, size: 18),
+                      onPressed: () => _deleteImage(img),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -286,17 +277,26 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       drawer: const CustomDrawer(),
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          },
-        ),
         title: Text(_selectedIndex == 0 ? 'Explore' : 'Albums'),
+        actions: _selectedIndex == 0
+            ? [
+                // منوی مرتب‌سازی
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.sort),
+                  onSelected: _sortImages,
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'likes',
+                      child: Text('Sort by Likes'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'name',
+                      child: Text('Sort by Name'),
+                    ),
+                  ],
+                ),
+              ]
+            : null,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -306,11 +306,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   albums: _userAlbums,
                   userName: widget.currentUserName,
                   allImages: _allImages,
-                  onCreateAlbum: _createAlbum,
-                  onDeleteAlbum: _deleteAlbum,
-                  onRemoveImageFromAlbum: _removeImageFromAlbum,
-                  onMoveImageToAnotherAlbum: _moveImageToAnotherAlbum,
-                  onUpdateCover: (album, coverUrl) {},
+                  onCreateAlbum: (title) => setState(() => _userAlbums.add(AlbumModel(title: title, images: []))),
+                  onDeleteAlbum: (album) => setState(() => _userAlbums.remove(album)),
+                  onRemoveImageFromAlbum: (album, img) {},
+                  onMoveImageToAnotherAlbum: (s, t, img) {},
+                  onUpdateCover: (a, c) {},
                 )),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton.extended(
@@ -320,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(
                     builder: (context) => UploadScreen(
                       currentUserName: widget.currentUserName,
-                      onImageUploaded: _addNewImage,
+                      onImageUploaded: (newImg) => setState(() => _allImages.add(newImg)),
                     ),
                   ),
                 );
@@ -331,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
           : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        onTap: (index) => setState(() => _selectedIndex = index),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.photo_library),

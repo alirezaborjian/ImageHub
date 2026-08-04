@@ -1,16 +1,5 @@
 [
   {
-    "id": "1",
-    "title": "AFLJAFD",
-    "path": "pictures/AFLJAFD.jpg",
-    "ownerUsername": "alireza",
-    "uploadDate": "2026-08-04",
-    "likes": [
-      "alireza"
-    ],
-    "comments": []
-  },
-  {
     "id": "2",
     "title": "aiofaa",
     "path": "pictures/aiofaa.jpg",
@@ -65,17 +54,6 @@
     "comments": []
   },
   {
-    "id": "8",
-    "title": "aafdaf",
-    "path": "pictures/aafdaf.jpg",
-    "ownerUsername": "alireza",
-    "uploadDate": "2026-08-04",
-    "likes": [
-      "alireza"
-    ],
-    "comments": []
-  },
-  {
     "id": "9",
     "title": "adsfads",
     "path": "pictures/adsfads.jpg",
@@ -87,18 +65,18 @@
     "comments": []
   },
   {
-    "id": "10",
-    "title": "\\sfddafaa",
-    "path": "pictures/\\sfddafaa.jpg",
+    "id": "11",
+    "title": "adsafd",
+    "path": "pictures/adsafd.jpg",
     "ownerUsername": "alireza",
     "uploadDate": "2026-08-04",
     "likes": [],
     "comments": []
   },
   {
-    "id": "11",
-    "title": "adsafd",
-    "path": "pictures/adsafd.jpg",
+    "id": "12",
+    "title": "d;gsjf",
+    "path": "pictures/d;gsjf.jpg",
     "ownerUsername": "alireza",
     "uploadDate": "2026-08-04",
     "likes": [],

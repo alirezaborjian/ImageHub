@@ -193,10 +193,22 @@ public class APIServer {
                                     .orElse(null);
 
                             if (imgToDelete != null) {
+                                if (imgToDelete.getImagePath() != null) {
+                                    try {
+                                        Files.deleteIfExists(Paths.get(imgToDelete.getImagePath()));
+                                    } catch (IOException ignored) {
+                                    }
+                                }
                                 allImages.remove(imgToDelete);
-                                delUserObj.getUploadImages().remove(imgToDelete);
-                                for (Album alb : delUserObj.getAlbums()) {
-                                    alb.getImages().remove(imgToDelete);
+                                if (delUserObj.getUploadImages() != null) {
+                                    delUserObj.getUploadImages().remove(imgToDelete);
+                                }
+                                if (delUserObj.getAlbums() != null) {
+                                    for (Album alb : delUserObj.getAlbums()) {
+                                        if (alb.getImages() != null) {
+                                            alb.getImages().remove(imgToDelete);
+                                        }
+                                    }
                                 }
                                 response.addProperty("statusCode", 200);
                                 response.addProperty("message", "Image deleted successfully.");

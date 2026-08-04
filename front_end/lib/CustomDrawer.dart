@@ -17,8 +17,9 @@ class CustomDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = UserProvider.of(context)!;
-    final userName = userProvider.userName;
+    // خواندن ایمن بدون استفاده از علامت !
+    final userProvider = UserProvider.of(context);
+    final userName = userProvider?.userName ?? 'User';
 
     return Drawer(
       child: Column(
