@@ -11,21 +11,26 @@ class ImageModel {
   final String caption;
   final String imageUrl;
   int likes;
+  List<String> likedByUsers;
   List<String> tags;
   List<CommentModel> comments;
+  String? album;
 
   ImageModel({
     required this.name,
     required this.caption,
     required this.imageUrl,
     required this.likes,
+    List<String>? likedByUsers,
     required this.tags,
     required this.comments,
-  });
+    this.album,
+  }) : likedByUsers = likedByUsers ?? [];
 
   factory ImageModel.fromJson(Map<String, dynamic> json) {
     var tagsList = json['tags'] as List? ?? [];
     var commentsList = json['comments'] as List? ?? [];
+    var likedByList = json['likedByUsers'] as List? ?? json['likedBy'] as List? ?? [];
 
     int likesCount = 0;
     if (json['likes'] is int) {
@@ -39,8 +44,10 @@ class ImageModel {
       caption: json['caption'] ?? '',
       imageUrl: json['imageUrl'] ?? json['base64Data'] ?? json['data'] ?? '',
       likes: likesCount,
+      likedByUsers: likedByList.map((e) => e.toString()).toList(),
       tags: tagsList.map((e) => e.toString()).toList(),
       comments: commentsList.map((e) => CommentModel.fromJson(e)).toList(),
+      album: json['album']?.toString(),
     );
   }
 }
@@ -51,12 +58,25 @@ class CommentModel {
 
   CommentModel({required this.username, required this.text});
 
-  factory CommentModel.fromJson(Map<String, dynamic> json) {
-    return CommentModel(
-      username: json['username'] ?? json['userName'] ?? '',
-      text: json['text'] ?? '',
-    );
+  factory CommentModel.fromJson(dynamic json) {
+    if (json is String) {
+      final parts = json.split(': ');
+      if (parts.length > 1) {
+        return CommentModel(username: parts[0], text: parts.sublist(1).join(': '));
+      }
+      return CommentModel(username: 'User', text: json);
+    }
+    if (json is Map<String, dynamic>) {
+      return CommentModel(
+        username: json['username'] ?? json['userName'] ?? '',
+        text: json['text'] ?? '',
+      );
+    }
+    return CommentModel(username: '', text: '');
   }
+
+  @override
+  String toString() => '$username: $text';
 }
 
 class HomeScreen extends StatefulWidget {
@@ -83,37 +103,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _fetchInitialData() async {
     final socketService = SocketService();
-
-    final imagesResponse = await socketService.sendRequest({'action': 'getAllImages'});
-    final albumsResponse = await socketService.sendRequest({
-      'action': 'getUserAlbums',
-      'username': widget.currentUserName,
-    });
-
     List<ImageModel> fetchedImages = [];
-    if (imagesResponse['statusCode'] == 200 && imagesResponse['payload'] != null) {
-      final List list = imagesResponse['payload'];
-      fetchedImages = list.map((item) => ImageModel.fromJson(item)).toList();
-    }
-
     List<AlbumModel> fetchedAlbums = [];
-    if (albumsResponse['statusCode'] == 200 && albumsResponse['payload'] != null) {
-      final List list = albumsResponse['payload'];
-      fetchedAlbums = list.map((item) {
-        final String title = item['title'] ?? '';
-        final List imgsJson = item['images'] ?? [];
-        final List<ImageModel> albumImgs =
-            imgsJson.map((x) => ImageModel.fromJson(x)).toList();
-        return AlbumModel(title: title, images: albumImgs);
-      }).toList();
-    }
 
-    if (mounted) {
-      setState(() {
-        _allImages = fetchedImages;
-        _userAlbums = fetchedAlbums;
-        _isLoading = false;
+    try {
+      final imagesResponse = await socketService.sendRequest({'action': 'getAllImages'});
+      if (imagesResponse['statusCode'] == 200 && imagesResponse['payload'] != null) {
+        final List list = imagesResponse['payload'];
+        fetchedImages = list.map((item) => ImageModel.fromJson(item)).toList();
+      }
+
+      final albumsResponse = await socketService.sendRequest({
+        'action': 'getUserAlbums',
+        'username': widget.currentUserName,
       });
+
+      if (albumsResponse['statusCode'] == 200 && albumsResponse['payload'] != null) {
+        final List list = albumsResponse['payload'];
+        fetchedAlbums = list.map((item) {
+          final String title = item['title'] ?? '';
+          final List imgsJson = item['images'] ?? [];
+          final List<ImageModel> albumImgs =
+              imgsJson.map((x) => ImageModel.fromJson(x)).toList();
+          return AlbumModel(title: title, images: albumImgs);
+        }).toList();
+      }
+    } catch (e) {
+      debugPrint("Error in _fetchInitialData: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _allImages = fetchedImages;
+          _userAlbums = fetchedAlbums;
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -217,16 +241,18 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: InkWell(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ImageDetailsScreen(
-                    imageItem: img,
+                    image: img,
                     currentUserName: widget.currentUserName,
+                    allUserAlbums: _userAlbums.map((a) => a.title).toList(),
                   ),
                 ),
               );
+              setState(() {});
             },
             child: Stack(
               children: [

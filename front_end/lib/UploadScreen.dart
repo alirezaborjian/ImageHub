@@ -20,104 +20,129 @@ class UploadScreen extends StatefulWidget {
 }
 
 class _UploadScreenState extends State<UploadScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _captionController = TextEditingController();
-
   File? _selectedImage;
-  String? _base64Data;
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _captionController = TextEditingController();
+  final TextEditingController _tagsController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
 
-  Future<void> _pickImage(ImageSource source) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: source);
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _captionController.dispose();
+    _tagsController.dispose();
+    super.dispose();
+  }
 
-    if (pickedFile != null) {
-      final bytes = await File(pickedFile.path).readAsBytes();
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-        _base64Data = base64Encode(bytes);
-      });
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      print('Error picking image: $e');
     }
   }
 
-  void _showImageSourceOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Wrap(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.photo_library),
-            title: const Text('Gallery'),
-            onTap: () {
-              Navigator.pop(context);
-              _pickImage(ImageSource.gallery);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.camera_alt),
-            title: const Text('Camera'),
-            onTap: () {
-              Navigator.pop(context);
-              _pickImage(ImageSource.camera);
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  Future<void> _uploadImage() async {
+    final title = _titleController.text.trim();
+    final caption = _captionController.text.trim();
+    final tagsInput = _tagsController.text.trim();
 
-  void _submitUpload() async {
-    if (_formKey.currentState!.validate()) {
-      if (_base64Data == null) {
+    if (_selectedImage == null) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select an image first')),
+          const SnackBar(content: Text('Please select an image')),
         );
-        return;
       }
+      return;
+    }
 
-      setState(() => _isLoading = true);
+    if (title.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter an image title')),
+        );
+      }
+      return;
+    }
 
-      final socketService = SocketService();
+    setState(() {
+      _isLoading = true;
+    });
 
-      Map<String, dynamic> request = {
+    try {
+      final bytes = await _selectedImage!.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      List<String> tagsList = tagsInput.isNotEmpty
+          ? tagsInput.split(',').map((e) => e.trim()).toList()
+          : [];
+
+      final response = await SocketService().sendRequest({
         'action': 'uploadImage',
-        'name': _nameController.text.trim(),
-        'caption': _captionController.text.trim(),
-        'base64Data': _base64Data,
         'username': widget.currentUserName,
-      };
-
-      final response = await socketService.sendRequest(request);
-
-      setState(() => _isLoading = false);
+        'title': title,
+        'caption': caption,
+        'tags': tagsList,
+        'imageData': base64Image,
+      }).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          return {
+            'statusCode': 408,
+            'message': 'Connection timed out',
+          };
+        },
+      );
 
       if (response['statusCode'] == 200) {
-        final serverImg = response['payload'];
-        final newImg = ImageModel(
-          name: serverImg != null
-              ? (serverImg['name'] ?? _nameController.text.trim())
-              : _nameController.text.trim(),
-          caption: serverImg != null
-              ? (serverImg['caption'] ?? _captionController.text.trim())
-              : _captionController.text.trim(),
-          imageUrl: serverImg != null ? (serverImg['imageUrl'] ?? '') : '',
+        final newImage = ImageModel(
+          name: title,
+          caption: caption,
+          imageUrl: base64Image,
           likes: 0,
-          tags: [],
+          tags: tagsList,
           comments: [],
         );
-        widget.onImageUploaded(newImg);
-        if (mounted) Navigator.pop(context);
+
+        widget.onImageUploaded(newImage);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image uploaded successfully')),
+          );
+          Navigator.pop(context);
+        }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                response['message'] ?? 'User not found or upload failed',
-              ),
+              content: Text(response['message'] ?? 'Failed to upload image'),
             ),
           );
         }
+      }
+    } catch (e) {
+      print('Exception in upload: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Connection error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -125,63 +150,101 @@ class _UploadScreenState extends State<UploadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Upload Image')),
+      appBar: AppBar(
+        title: const Text('Upload Image'),
+      ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Uploading image to server...'),
+                ],
+              ),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    GestureDetector(
-                      onTap: _showImageSourceOptions,
-                      child: Container(
-                        height: 200,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey),
-                        ),
-                        child: _selectedImage != null
-                            ? Image.file(_selectedImage!, fit: BoxFit.cover)
-                            : const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_a_photo,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text('Tap to select from Camera or Gallery'),
-                                ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      height: 220,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[400]!),
+                      ),
+                      child: _selectedImage != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(
+                                _selectedImage!,
+                                fit: BoxFit.cover,
                               ),
+                            )
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_a_photo,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Tap to select an image',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Image Title',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.title),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _captionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Caption',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.description),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _tagsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Tags (comma separated)',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.tag),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _uploadImage,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Image Name',
-                      ),
-                      validator: (v) => v!.isEmpty ? 'Please enter name' : null,
+                    child: const Text(
+                      'Upload Image',
+                      style: TextStyle(fontSize: 16),
                     ),
-                    TextFormField(
-                      controller: _captionController,
-                      decoration: const InputDecoration(labelText: 'Caption'),
-                    ),
-                    const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _submitUpload,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 45),
-                      ),
-                      child: const Text('Post Image'),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
     );

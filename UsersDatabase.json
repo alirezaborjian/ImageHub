@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "userName": "Alireza",
+    "password": "ASas12345",
+    "email": "",
+    "isAdmin": false,
+    "uploadImages": [
+      {
+        "id": "1",
+        "title": "Dragon",
+        "imagePath": "pictures/1785915303130_Dragon.jpg",
+        "uploader": "Alireza",
+        "uploadDate": "2026-08-05",
+        "caption": "Monstar",
+        "likes": [],
+        "tags": [],
+        "comments": []
+      }
+    ],
+    "albums": []
+  }
+]

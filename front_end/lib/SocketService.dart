@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:async';
 
 class SocketService {
   static final SocketService _instance = SocketService._internal();
@@ -8,99 +8,110 @@ class SocketService {
   SocketService._internal();
 
   Socket? _socket;
-  bool _isConnected = false;
+  StreamSubscription? _subscription;
+  Completer<Map<String, dynamic>>? _pendingCompleter;
 
-  bool get isConnected => _isConnected;
+  bool get isConnected => _socket != null;
 
-  Future<bool> connectToServer({
-    String host = '10.0.2.2',
-    int port = 8085,
-  }) async {
+  Future<bool> connectToServer({String host = '10.0.2.2', int port = 8085}) async {
+    if (_socket != null) return true;
     try {
-      String targetHost = (host == '127.0.0.1' && Platform.isAndroid)
-          ? '10.0.2.2'
-          : host;
-      _socket = await Socket.connect(
-        targetHost,
-        port,
-        timeout: const Duration(seconds: 5),
-      );
-      _isConnected = true;
-      return true;
-    } catch (e) {
-      _isConnected = false;
-      return false;
-    }
-  }
-
-  Future<Map<String, dynamic>> sendRequest(
-    Map<String, dynamic> requestData,
-  ) async {
-    if (!_isConnected || _socket == null) {
-      bool reconnected = await connectToServer();
-      if (!reconnected) {
-        return {'statusCode': 500, 'message': 'Not connected to server.'};
-      }
-    }
-
-    Completer<Map<String, dynamic>> completer = Completer();
-    StreamSubscription? subscription;
-
-    try {
-      String jsonStr = '${jsonEncode(requestData)}\n';
-      _socket!.write(jsonStr);
-      await _socket!.flush();
-
-      subscription = _socket!
+      _socket = await Socket.connect(host, port).timeout(const Duration(seconds: 5));
+      _subscription = _socket!
           .cast<List<int>>()
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .listen(
-        (line) {
-          if (!completer.isCompleted && line.trim().isNotEmpty) {
+        (data) {
+          if (_pendingCompleter != null && !_pendingCompleter!.isCompleted) {
             try {
-              completer.complete(jsonDecode(line) as Map<String, dynamic>);
+              final jsonResponse = jsonDecode(data);
+              _pendingCompleter!.complete(jsonResponse);
             } catch (e) {
-              completer.complete({
-                'statusCode': 500,
-                'message': 'Invalid JSON response from server',
-              });
+              _pendingCompleter!.completeError(e);
             }
           }
         },
         onError: (error) {
-          if (!completer.isCompleted) {
-            completer.complete({
-              'statusCode': 500,
-              'message': error.toString(),
-            });
-          }
+          _closeSocket();
         },
         onDone: () {
-          _isConnected = false;
-          if (!completer.isCompleted) {
-            completer.complete({
-              'statusCode': 500,
-              'message': 'Connection closed by server.',
-            });
-          }
+          _closeSocket();
         },
       );
-
-      final result = await completer.future.timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          return {'statusCode': 408, 'message': 'Request timed out'};
-        },
-      );
-
-      await subscription.cancel();
-      return result;
+      return true;
     } catch (e) {
-      await subscription?.cancel();
-      _isConnected = false;
-      return {'statusCode': 500, 'message': e.toString()};
+      _closeSocket();
+      return false;
     }
+  }
+
+  Future<Map<String, dynamic>> sendRequest(Map<String, dynamic> request) async {
+    if (_socket == null) {
+      bool connected = await connectToServer();
+      if (!connected) {
+        return {'statusCode': 500, 'message': 'Could not connect to server'};
+      }
+    }
+
+    _pendingCompleter = Completer<Map<String, dynamic>>();
+
+    try {
+      String jsonString = jsonEncode(request) + '\n';
+      _socket!.write(jsonString);
+      await _socket!.flush();
+      
+      final response = await _pendingCompleter!.future.timeout(
+        const Duration(seconds: 8),
+        onTimeout: () {
+          _closeSocket();
+          return {'statusCode': 408, 'message': 'Request timeout'};
+        },
+      );
+
+      _closeSocket();
+      return response;
+    } catch (e) {
+      _closeSocket();
+      return {'statusCode': 500, 'message': 'Error sending request: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> toggleLike({
+    required String username,
+    required String imageName,
+  }) async {
+    return await sendRequest({
+      'action': 'toggleLike',
+      'username': username,
+      'imageName': imageName,
+    });
+  }
+
+  Future<Map<String, dynamic>> addComment({
+    required String username,
+    required String imageName,
+    required String comment,
+  }) async {
+    return await sendRequest({
+      'action': 'addComment',
+      'username': username,
+      'imageName': imageName,
+      'comment': comment,
+    });
+  }
+
+  Future<Map<String, dynamic>> addTag({
+    required String username,
+    required String imageName,
+    required String tag,
+  }) async {
+    return await sendRequest({
+      'action': 'addTag',
+      'username': username,
+      'imageName': imageName,
+      'tag': tag,
+    });
   }
 
   Future<Map<String, dynamic>> moveImage({
@@ -109,20 +120,19 @@ class SocketService {
     required String targetAlbum,
     required String imageName,
   }) async {
-    final request = {
+    return await sendRequest({
       'action': 'moveImage',
       'username': username,
       'sourceAlbum': sourceAlbum,
       'targetAlbum': targetAlbum,
       'imageName': imageName,
-    };
-
-    return await sendRequest(request);
+    });
   }
 
-  void disconnect() {
+  void _closeSocket() {
+    _subscription?.cancel();
     _socket?.destroy();
+    _subscription = null;
     _socket = null;
-    _isConnected = false;
   }
 }
