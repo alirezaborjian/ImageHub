@@ -60,7 +60,7 @@ class SocketService {
       String jsonString = jsonEncode(request) + '\n';
       _socket!.write(jsonString);
       await _socket!.flush();
-      
+
       final response = await _pendingCompleter!.future.timeout(
         const Duration(seconds: 8),
         onTimeout: () {
@@ -82,8 +82,9 @@ class SocketService {
     required String imageName,
   }) async {
     return await sendRequest({
-      'action': 'toggleLike',
+      'action': 'likeImage',
       'username': username,
+      'name': imageName,
       'imageName': imageName,
     });
   }
@@ -96,8 +97,10 @@ class SocketService {
     return await sendRequest({
       'action': 'addComment',
       'username': username,
+      'name': imageName,
       'imageName': imageName,
       'comment': comment,
+      'text': comment,
     });
   }
 
@@ -109,6 +112,7 @@ class SocketService {
     return await sendRequest({
       'action': 'addTag',
       'username': username,
+      'name': imageName,
       'imageName': imageName,
       'tag': tag,
     });
@@ -126,6 +130,7 @@ class SocketService {
       'sourceAlbum': sourceAlbum,
       'targetAlbum': targetAlbum,
       'imageName': imageName,
+      'name': imageName,
     });
   }
 

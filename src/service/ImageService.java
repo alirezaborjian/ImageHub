@@ -1,5 +1,6 @@
 package service;
 
+import model.Comment;
 import model.Image;
 import model.User;
 
@@ -24,24 +25,25 @@ public class ImageService {
     }
 
     public void likeImage(Image image, String username) {
-        if (image != null && username != null) {
+        if (image != null && username != null && !username.trim().isEmpty()) {
             if (image.getLikes() == null) {
                 image.setLikes(new ArrayList<>());
             }
-            if (image.getLikes().contains(username)) {
-                image.getLikes().remove(username);
+            String cleanUsername = username.trim();
+            if (image.getLikes().contains(cleanUsername)) {
+                image.getLikes().remove(cleanUsername);
             } else {
-                image.getLikes().add(username);
+                image.getLikes().add(cleanUsername);
             }
         }
     }
 
     public void addComment(Image image, String username, String commentText) {
-        if (image != null && username != null && commentText != null) {
+        if (image != null && username != null && commentText != null && !commentText.trim().isEmpty()) {
             if (image.getComments() == null) {
                 image.setComments(new ArrayList<>());
             }
-            image.getComments().add(new model.Comment(username, commentText));
+            image.getComments().add(new Comment(username.trim(), commentText.trim()));
         }
     }
 
@@ -50,8 +52,9 @@ public class ImageService {
             if (image.getTags() == null) {
                 image.setTags(new ArrayList<>());
             }
-            if (!image.getTags().contains(tag.trim())) {
-                image.getTags().add(tag.trim());
+            String cleanTag = tag.trim();
+            if (!image.getTags().contains(cleanTag)) {
+                image.getTags().add(cleanTag);
             }
         }
     }

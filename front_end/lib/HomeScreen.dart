@@ -30,7 +30,7 @@ class ImageModel {
   factory ImageModel.fromJson(Map<String, dynamic> json) {
     var tagsList = json['tags'] as List? ?? [];
     var commentsList = json['comments'] as List? ?? [];
-    var likedByList = json['likedByUsers'] as List? ?? json['likedBy'] as List? ?? [];
+    var likedByList = json['likedByUsers'] as List? ?? json['likedUsernames'] as List? ?? json['likedBy'] as List? ?? [];
 
     int likesCount = 0;
     if (json['likes'] is int) {
@@ -40,7 +40,7 @@ class ImageModel {
     }
 
     return ImageModel(
-      name: json['name'] ?? '',
+      name: json['name'] ?? json['title'] ?? '',
       caption: json['caption'] ?? '',
       imageUrl: json['imageUrl'] ?? json['base64Data'] ?? json['data'] ?? '',
       likes: likesCount,
@@ -252,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               );
-              setState(() {});
+              _fetchInitialData();
             },
             child: Stack(
               children: [
@@ -361,8 +361,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 )),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => UploadScreen(
@@ -371,6 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 );
+                _fetchInitialData();
               },
               icon: const Icon(Icons.add_a_photo),
               label: const Text('Add Photo'),

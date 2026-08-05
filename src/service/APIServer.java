@@ -101,96 +101,85 @@ public class APIServer {
                     return gson.toJson(response);
                 }
 
-                String action = request.get("action").getAsString();
+                String action = request.get("action").getAsString().trim();
 
-                switch (action) {
-                    case "signup": {
-                        String sUser = request.has("username") ? request.get("username").getAsString() : "";
-                        String sPass = request.has("password") ? request.get("password").getAsString() : "";
-                        return userService.registerUser(sUser, sPass, "", users);
-                    }
-
-                    case "login": {
-                        String lUser = request.has("username") ? request.get("username").getAsString() : "";
-                        String lPass = request.has("password") ? request.get("password").getAsString() : "";
-                        return userService.loginUser(lUser, lPass, users);
-                    }
-
-                    case "logout": {
-                        response.addProperty("statusCode", 200);
-                        response.addProperty("message", "Logged out successfully.");
-                        break;
-                    }
-
-                    case "getAllImages": {
-                        JsonArray imgArray = new JsonArray();
-                        synchronized (allImages) {
-                            for (Image img : allImages) {
-                                JsonObject imgObj = buildImageJsonObject(img);
-                                imgArray.add(imgObj);
-                            }
+                if (action.equalsIgnoreCase("signup")) {
+                    String sUser = request.has("username") ? request.get("username").getAsString() : "";
+                    String sPass = request.has("password") ? request.get("password").getAsString() : "";
+                    return userService.registerUser(sUser, sPass, "", users);
+                }
+                else if (action.equalsIgnoreCase("login")) {
+                    String lUser = request.has("username") ? request.get("username").getAsString() : "";
+                    String lPass = request.has("password") ? request.get("password").getAsString() : "";
+                    return userService.loginUser(lUser, lPass, users);
+                }
+                else if (action.equalsIgnoreCase("logout")) {
+                    response.addProperty("statusCode", 200);
+                    response.addProperty("message", "Logged out successfully.");
+                }
+                else if (action.equalsIgnoreCase("getAllImages")) {
+                    JsonArray imgArray = new JsonArray();
+                    synchronized (allImages) {
+                        for (Image img : allImages) {
+                            JsonObject imgObj = buildImageJsonObject(img);
+                            imgArray.add(imgObj);
                         }
-
-                        response.addProperty("statusCode", 200);
-                        response.addProperty("message", "Images retrieved successfully.");
-                        response.add("payload", imgArray);
-                        break;
+                    }
+                    response.addProperty("statusCode", 200);
+                    response.addProperty("message", "Images retrieved successfully.");
+                    response.add("payload", imgArray);
+                }
+                else if (action.equalsIgnoreCase("getUserAlbums")) {
+                    String userName = request.has("username") ? request.get("username").getAsString().trim() : "";
+                    User u = null;
+                    synchronized (users) {
+                        u = users.stream()
+                                .filter(usr -> usr.getUserName() != null && usr.getUserName().trim().equalsIgnoreCase(userName))
+                                .findFirst()
+                                .orElse(null);
                     }
 
-                    case "getUserAlbums": {
-                        String userName = request.has("username") ? request.get("username").getAsString().trim() : "";
-                        User u = null;
-                        synchronized (users) {
-                            u = users.stream()
-                                    .filter(usr -> usr.getUserName() != null && usr.getUserName().trim().equalsIgnoreCase(userName))
-                                    .findFirst()
-                                    .orElse(null);
-                        }
+                    if (u != null) {
+                        JsonArray albumsArray = new JsonArray();
+                        if (u.getAlbums() != null) {
+                            for (Album alb : u.getAlbums()) {
+                                JsonObject albObj = new JsonObject();
+                                albObj.addProperty("title", alb.getName() != null ? alb.getName() : "");
 
-                        if (u != null) {
-                            JsonArray albumsArray = new JsonArray();
-                            if (u.getAlbums() != null) {
-                                for (Album alb : u.getAlbums()) {
-                                    JsonObject albObj = new JsonObject();
-                                    albObj.addProperty("title", alb.getName() != null ? alb.getName() : "");
-
-                                    JsonArray albImgs = new JsonArray();
-                                    if (alb.getImages() != null) {
-                                        for (Image img : alb.getImages()) {
-                                            albImgs.add(buildImageJsonObject(img));
-                                        }
+                                JsonArray albImgs = new JsonArray();
+                                if (alb.getImages() != null) {
+                                    for (Image img : alb.getImages()) {
+                                        albImgs.add(buildImageJsonObject(img));
                                     }
-                                    albObj.add("images", albImgs);
-                                    albumsArray.add(albObj);
                                 }
+                                albObj.add("images", albImgs);
+                                albumsArray.add(albObj);
                             }
-                            response.addProperty("statusCode", 200);
-                            response.addProperty("message", "User albums retrieved.");
-                            response.add("payload", albumsArray);
-                        } else {
-                            response.addProperty("statusCode", 404);
-                            response.addProperty("message", "User not found.");
                         }
-                        break;
+                        response.addProperty("statusCode", 200);
+                        response.addProperty("message", "User albums retrieved.");
+                        response.add("payload", albumsArray);
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "User not found.");
                     }
+                }
+                else if (action.equalsIgnoreCase("uploadImage")) {
+                    String imgName = request.has("title") ? request.get("title").getAsString().trim() :
+                            (request.has("name") ? request.get("name").getAsString().trim() :
+                                    (request.has("imageName") ? request.get("imageName").getAsString().trim() : ""));
 
-                    case "uploadImage": {
-                        String imgName = request.has("title") ? request.get("title").getAsString().trim() :
-                                (request.has("name") ? request.get("name").getAsString().trim() : "");
+                    String caption = request.has("caption") ? request.get("caption").getAsString().trim() : "";
 
-                        String caption = request.has("caption") ? request.get("caption").getAsString().trim() : "";
+                    String base64Data = request.has("imageData") ? request.get("imageData").getAsString() :
+                            (request.has("base64Data") ? request.get("base64Data").getAsString() : "");
 
-                        String base64Data = request.has("imageData") ? request.get("imageData").getAsString() :
-                                (request.has("base64Data") ? request.get("base64Data").getAsString() : "");
+                    String uName = request.has("username") ? request.get("username").getAsString().trim() : "";
 
-                        String uName = request.has("username") ? request.get("username").getAsString().trim() : "";
-
-                        if (imgName.isEmpty() || base64Data.trim().isEmpty()) {
-                            response.addProperty("statusCode", 400);
-                            response.addProperty("message", "Image name/title or base64Data is missing.");
-                            break;
-                        }
-
+                    if (imgName.isEmpty() || base64Data.trim().isEmpty()) {
+                        response.addProperty("statusCode", 400);
+                        response.addProperty("message", "Image name/title or base64Data is missing.");
+                    } else {
                         User u = null;
                         synchronized (users) {
                             u = users.stream()
@@ -203,279 +192,272 @@ public class APIServer {
                         if (u == null) {
                             response.addProperty("statusCode", 404);
                             response.addProperty("message", "User not found.");
-                            break;
-                        }
+                        } else {
+                            String cleanBase64 = base64Data.contains(",") ? base64Data.split(",")[1] : base64Data;
+                            String fileName = System.currentTimeMillis() + "_" + imgName.replaceAll("[^a-zA-Z0-9.-]", "_") + ".jpg";
+                            String imgPath = PICS_DIR + fileName;
 
-                        String cleanBase64 = base64Data.contains(",") ? base64Data.split(",")[1] : base64Data;
+                            byte[] imageBytes = Base64.getDecoder().decode(cleanBase64.trim());
+                            Files.write(Paths.get(imgPath), imageBytes);
 
-                        String fileName = System.currentTimeMillis() + "_" + imgName.replaceAll("[^a-zA-Z0-9.-]", "_") + ".jpg";
-                        String imgPath = PICS_DIR + fileName;
+                            String newId = String.valueOf(allImages.size() + 1);
+                            Image image = new Image(newId, imgName, imgPath, u.getUserName(), LocalDate.now().toString());
+                            image.setCaption(caption);
 
-                        byte[] imageBytes = Base64.getDecoder().decode(cleanBase64.trim());
-                        Files.write(Paths.get(imgPath), imageBytes);
-
-                        String newId = String.valueOf(allImages.size() + 1);
-                        Image image = new Image(newId, imgName, imgPath, u.getUserName(), LocalDate.now().toString());
-                        image.setCaption(caption);
-
-                        if (request.has("tags") && request.get("tags").isJsonArray()) {
-                            JsonArray tagsArr = request.getAsJsonArray("tags");
-                            for (JsonElement t : tagsArr) {
-                                imageService.addTag(image, t.getAsString());
+                            if (request.has("tags") && request.get("tags").isJsonArray()) {
+                                JsonArray tagsArr = request.getAsJsonArray("tags");
+                                for (JsonElement t : tagsArr) {
+                                    imageService.addTag(image, t.getAsString());
+                                }
                             }
-                        }
 
-                        imageService.uploadImage(u, image);
+                            imageService.uploadImage(u, image);
+                            needSaveData = true;
+
+                            JsonObject imgObj = buildImageJsonObject(image);
+
+                            response.addProperty("statusCode", 200);
+                            response.addProperty("message", "Image uploaded successfully.");
+                            response.add("payload", imgObj);
+                        }
+                    }
+                }
+                else if (action.equalsIgnoreCase("deleteImage")) {
+                    String delImgUser = request.has("username") ? request.get("username").getAsString().trim() : "";
+                    String delImgName = request.has("name") ? request.get("name").getAsString().trim() :
+                            (request.has("title") ? request.get("title").getAsString().trim() :
+                                    (request.has("imageName") ? request.get("imageName").getAsString().trim() : ""));
+
+                    User delUserObj = users.stream()
+                            .filter(usr -> usr.getUserName() != null
+                                    && usr.getUserName().trim().equalsIgnoreCase(delImgUser))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (delUserObj != null) {
+                        Image imgToDelete = allImages.stream()
+                                .filter(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(delImgName))
+                                .findFirst()
+                                .orElse(null);
+
+                        if (imgToDelete != null) {
+                            if (imgToDelete.getImagePath() != null) {
+                                try {
+                                    Files.deleteIfExists(Paths.get(imgToDelete.getImagePath()));
+                                } catch (IOException ignored) {}
+                            }
+                            allImages.remove(imgToDelete);
+                            if (delUserObj.getUploadImages() != null) {
+                                delUserObj.getUploadImages().remove(imgToDelete);
+                            }
+                            if (delUserObj.getAlbums() != null) {
+                                for (Album alb : delUserObj.getAlbums()) {
+                                    if (alb.getImages() != null) {
+                                        alb.getImages().remove(imgToDelete);
+                                    }
+                                }
+                            }
+                            needSaveData = true;
+                            response.addProperty("statusCode", 200);
+                            response.addProperty("message", "Image deleted successfully.");
+                        } else {
+                            response.addProperty("statusCode", 404);
+                            response.addProperty("message", "Image not found.");
+                        }
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "User not found.");
+                    }
+                }
+                else if (action.equalsIgnoreCase("likeImage") || action.equalsIgnoreCase("like") || action.equalsIgnoreCase("like_image") || action.equalsIgnoreCase("toggleLike")) {
+                    String targetImgName = request.has("name") ? request.get("name").getAsString().trim() :
+                            (request.has("title") ? request.get("title").getAsString().trim() :
+                                    (request.has("imageName") ? request.get("imageName").getAsString().trim() : ""));
+
+                    String likerUser = request.has("username") ? request.get("username").getAsString().trim() : "";
+
+                    Image imgToLike = allImages.stream()
+                            .filter(img -> img.getTitle() != null && img.getTitle().trim().equalsIgnoreCase(targetImgName))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (imgToLike != null) {
+                        imageService.likeImage(imgToLike, likerUser);
                         needSaveData = true;
-
-                        JsonObject imgObj = buildImageJsonObject(image);
-
                         response.addProperty("statusCode", 200);
-                        response.addProperty("message", "Image uploaded successfully.");
-                        response.add("payload", imgObj);
-                        break;
+                        response.addProperty("message", "Like status updated.");
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "Image not found.");
                     }
+                }
+                else if (action.equalsIgnoreCase("addComment")) {
+                    String cImgName = request.has("name") ? request.get("name").getAsString().trim() :
+                            (request.has("title") ? request.get("title").getAsString().trim() :
+                                    (request.has("imageName") ? request.get("imageName").getAsString().trim() : ""));
+                    String commenter = request.has("username") ? request.get("username").getAsString().trim() : "";
+                    String text = request.has("comment") ? request.get("comment").getAsString().trim()
+                            : (request.has("text") ? request.get("text").getAsString().trim() : "");
 
-                    case "deleteImage": {
-                        String delImgUser = request.get("username").getAsString().trim();
-                        String delImgName = request.get("name").getAsString().trim();
-                        User delUserObj = users.stream()
-                                .filter(usr -> usr.getUserName() != null
-                                        && usr.getUserName().trim().equalsIgnoreCase(delImgUser))
+                    Image imgToComment = allImages.stream()
+                            .filter(img -> img.getTitle() != null && img.getTitle().trim().equalsIgnoreCase(cImgName))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (imgToComment != null) {
+                        imageService.addComment(imgToComment, commenter, text);
+                        needSaveData = true;
+                        response.addProperty("statusCode", 200);
+                        response.addProperty("message", "Comment added.");
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "Image not found.");
+                    }
+                }
+                else if (action.equalsIgnoreCase("addTag")) {
+                    String tagImgName = request.has("name") ? request.get("name").getAsString().trim() :
+                            (request.has("title") ? request.get("title").getAsString().trim() :
+                                    (request.has("imageName") ? request.get("imageName").getAsString().trim() : ""));
+                    String tagText = request.has("tag") ? request.get("tag").getAsString().trim() : "";
+
+                    Image imgToTag = allImages.stream()
+                            .filter(img -> img.getTitle() != null && img.getTitle().trim().equalsIgnoreCase(tagImgName))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (imgToTag != null) {
+                        imageService.addTag(imgToTag, tagText);
+                        needSaveData = true;
+                        response.addProperty("statusCode", 200);
+                        response.addProperty("message", "Tag added successfully.");
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "Image not found.");
+                    }
+                }
+                else if (action.equalsIgnoreCase("createAlbum")) {
+                    String albUser = request.has("username") ? request.get("username").getAsString().trim() : "";
+                    String albTitle = request.has("title") ? request.get("title").getAsString().trim() : "";
+                    User owner = users.stream()
+                            .filter(usr -> usr.getUserName() != null
+                                    && usr.getUserName().trim().equalsIgnoreCase(albUser))
+                            .findFirst()
+                            .orElse(null);
+                    if (owner != null) {
+                        Album newAlbum = albumService.createAlbum(owner, albTitle);
+                        if (newAlbum != null) {
+                            needSaveData = true;
+                            response.addProperty("statusCode", 200);
+                            response.addProperty("message", "Album created successfully.");
+                        } else {
+                            response.addProperty("statusCode", 400);
+                            response.addProperty("message", "Album already exists.");
+                        }
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "User not found.");
+                    }
+                }
+                else if (action.equalsIgnoreCase("deleteAlbum")) {
+                    String delUser = request.has("username") ? request.get("username").getAsString().trim() : "";
+                    String delTitle = request.has("title") ? request.get("title").getAsString().trim() : "";
+                    User dOwner = users.stream()
+                            .filter(usr -> usr.getUserName() != null
+                                    && usr.getUserName().trim().equalsIgnoreCase(delUser))
+                            .findFirst()
+                            .orElse(null);
+                    if (dOwner != null) {
+                        Album targetAlbum = dOwner.getAlbums().stream()
+                                .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(delTitle))
                                 .findFirst()
                                 .orElse(null);
-
-                        if (delUserObj != null) {
-                            Image imgToDelete = allImages.stream()
-                                    .filter(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(delImgName))
-                                    .findFirst()
-                                    .orElse(null);
-
-                            if (imgToDelete != null) {
-                                if (imgToDelete.getImagePath() != null) {
-                                    try {
-                                        Files.deleteIfExists(Paths.get(imgToDelete.getImagePath()));
-                                    } catch (IOException ignored) {
-                                    }
-                                }
-                                allImages.remove(imgToDelete);
-                                if (delUserObj.getUploadImages() != null) {
-                                    delUserObj.getUploadImages().remove(imgToDelete);
-                                }
-                                if (delUserObj.getAlbums() != null) {
-                                    for (Album alb : delUserObj.getAlbums()) {
-                                        if (alb.getImages() != null) {
-                                            alb.getImages().remove(imgToDelete);
-                                        }
-                                    }
-                                }
+                        if (targetAlbum != null) {
+                            albumService.deleteAlbum(dOwner, targetAlbum);
+                            needSaveData = true;
+                            response.addProperty("statusCode", 200);
+                            response.addProperty("message", "Album deleted successfully.");
+                        } else {
+                            response.addProperty("statusCode", 404);
+                            response.addProperty("message", "Album not found.");
+                        }
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "User not found.");
+                    }
+                }
+                else if (action.equalsIgnoreCase("removeImageFromAlbum")) {
+                    String remUser = request.has("username") ? request.get("username").getAsString().trim() : "";
+                    String remTitle = request.has("title") ? request.get("title").getAsString().trim() : "";
+                    String remImgName = request.has("name") ? request.get("name").getAsString().trim() :
+                            (request.has("imageName") ? request.get("imageName").getAsString().trim() : "");
+                    User remOwner = users.stream()
+                            .filter(usr -> usr.getUserName() != null
+                                    && usr.getUserName().trim().equalsIgnoreCase(remUser))
+                            .findFirst()
+                            .orElse(null);
+                    if (remOwner != null) {
+                        Album remAlb = remOwner.getAlbums().stream()
+                                .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(remTitle))
+                                .findFirst()
+                                .orElse(null);
+                        if (remAlb != null) {
+                            remAlb.getImages()
+                                    .removeIf(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(remImgName));
+                            needSaveData = true;
+                            response.addProperty("statusCode", 200);
+                            response.addProperty("message", "Image removed from album.");
+                        } else {
+                            response.addProperty("statusCode", 404);
+                            response.addProperty("message", "Album not found.");
+                        }
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "User not found.");
+                    }
+                }
+                else if (action.equalsIgnoreCase("moveImage")) {
+                    String mUser = request.has("username") ? request.get("username").getAsString().trim() : "";
+                    String srcTitle = request.has("sourceAlbum") ? request.get("sourceAlbum").getAsString().trim() : "";
+                    String destTitle = request.has("targetAlbum") ? request.get("targetAlbum").getAsString().trim() : "";
+                    String targetImg = request.has("imageName") ? request.get("imageName").getAsString().trim() :
+                            (request.has("name") ? request.get("name").getAsString().trim() : "");
+                    User mOwner = users.stream()
+                            .filter(usr -> usr.getUserName() != null
+                                    && usr.getUserName().trim().equalsIgnoreCase(mUser))
+                            .findFirst()
+                            .orElse(null);
+                    if (mOwner != null) {
+                        Album srcAlb = mOwner.getAlbums().stream()
+                                .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(srcTitle))
+                                .findFirst().orElse(null);
+                        Album destAlb = mOwner.getAlbums().stream()
+                                .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(destTitle))
+                                .findFirst().orElse(null);
+                        Image target = allImages.stream()
+                                .filter(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(targetImg)).findFirst()
+                                .orElse(null);
+                        if (srcAlb != null && destAlb != null && target != null) {
+                            boolean moved = albumService.moveImageOtherAlbum(srcAlb, destAlb, target);
+                            if (moved) {
                                 needSaveData = true;
                                 response.addProperty("statusCode", 200);
-                                response.addProperty("message", "Image deleted successfully.");
-                            } else {
-                                response.addProperty("statusCode", 404);
-                                response.addProperty("message", "Image not found.");
-                            }
-                        } else {
-                            response.addProperty("statusCode", 404);
-                            response.addProperty("message", "User not found.");
-                        }
-                        break;
-                    }
-
-                    case "likeImage": {
-                        String targetImgName = request.get("name").getAsString().trim();
-                        String likerUser = request.get("username").getAsString().trim();
-                        Image imgToLike = allImages.stream()
-                                .filter(img -> img.getTitle() != null && img.getTitle().trim().equalsIgnoreCase(targetImgName))
-                                .findFirst()
-                                .orElse(null);
-
-                        if (imgToLike != null) {
-                            imageService.likeImage(imgToLike, likerUser);
-                            needSaveData = true;
-                            response.addProperty("statusCode", 200);
-                            response.addProperty("message", "Like status updated.");
-                        } else {
-                            response.addProperty("statusCode", 404);
-                            response.addProperty("message", "Image not found.");
-                        }
-                        break;
-                    }
-
-                    case "addComment": {
-                        String cImgName = request.get("name").getAsString().trim();
-                        String commenter = request.get("username").getAsString().trim();
-                        String text = request.has("comment") ? request.get("comment").getAsString().trim()
-                                : (request.has("text") ? request.get("text").getAsString().trim() : "");
-
-                        Image imgToComment = allImages.stream()
-                                .filter(img -> img.getTitle() != null && img.getTitle().trim().equalsIgnoreCase(cImgName))
-                                .findFirst()
-                                .orElse(null);
-
-                        if (imgToComment != null) {
-                            imageService.addComment(imgToComment, commenter, text);
-                            needSaveData = true;
-                            response.addProperty("statusCode", 200);
-                            response.addProperty("message", "Comment added.");
-                        } else {
-                            response.addProperty("statusCode", 404);
-                            response.addProperty("message", "Image not found.");
-                        }
-                        break;
-                    }
-
-                    case "addTag": {
-                        String tagImgName = request.get("name").getAsString().trim();
-                        String tagText = request.get("tag").getAsString().trim();
-
-                        Image imgToTag = allImages.stream()
-                                .filter(img -> img.getTitle() != null && img.getTitle().trim().equalsIgnoreCase(tagImgName))
-                                .findFirst()
-                                .orElse(null);
-
-                        if (imgToTag != null) {
-                            imageService.addTag(imgToTag, tagText);
-                            needSaveData = true;
-                            response.addProperty("statusCode", 200);
-                            response.addProperty("message", "Tag added successfully.");
-                        } else {
-                            response.addProperty("statusCode", 404);
-                            response.addProperty("message", "Image not found.");
-                        }
-                        break;
-                    }
-
-                    case "createAlbum": {
-                        String albUser = request.get("username").getAsString().trim();
-                        String albTitle = request.get("title").getAsString().trim();
-                        User owner = users.stream()
-                                .filter(usr -> usr.getUserName() != null
-                                        && usr.getUserName().trim().equalsIgnoreCase(albUser))
-                                .findFirst()
-                                .orElse(null);
-                        if (owner != null) {
-                            Album newAlbum = albumService.createAlbum(owner, albTitle);
-                            if (newAlbum != null) {
-                                needSaveData = true;
-                                response.addProperty("statusCode", 200);
-                                response.addProperty("message", "Album created successfully.");
+                                response.addProperty("message", "Image moved successfully.");
                             } else {
                                 response.addProperty("statusCode", 400);
-                                response.addProperty("message", "Album already exists.");
+                                response.addProperty("message", "Failed to move image.");
                             }
                         } else {
                             response.addProperty("statusCode", 404);
-                            response.addProperty("message", "User not found.");
+                            response.addProperty("message", "Source/Destination album or image not found.");
                         }
-                        break;
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "User not found.");
                     }
-
-                    case "deleteAlbum": {
-                        String delUser = request.get("username").getAsString().trim();
-                        String delTitle = request.get("title").getAsString().trim();
-                        User dOwner = users.stream()
-                                .filter(usr -> usr.getUserName() != null
-                                        && usr.getUserName().trim().equalsIgnoreCase(delUser))
-                                .findFirst()
-                                .orElse(null);
-                        if (dOwner != null) {
-                            Album targetAlbum = dOwner.getAlbums().stream()
-                                    .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(delTitle))
-                                    .findFirst()
-                                    .orElse(null);
-                            if (targetAlbum != null) {
-                                albumService.deleteAlbum(dOwner, targetAlbum);
-                                needSaveData = true;
-                                response.addProperty("statusCode", 200);
-                                response.addProperty("message", "Album deleted successfully.");
-                            } else {
-                                response.addProperty("statusCode", 404);
-                                response.addProperty("message", "Album not found.");
-                            }
-                        } else {
-                            response.addProperty("statusCode", 404);
-                            response.addProperty("message", "User not found.");
-                        }
-                        break;
-                    }
-
-                    case "removeImageFromAlbum": {
-                        String remUser = request.get("username").getAsString().trim();
-                        String remTitle = request.get("title").getAsString().trim();
-                        String remImgName = request.get("name").getAsString().trim();
-                        User remOwner = users.stream()
-                                .filter(usr -> usr.getUserName() != null
-                                        && usr.getUserName().trim().equalsIgnoreCase(remUser))
-                                .findFirst()
-                                .orElse(null);
-                        if (remOwner != null) {
-                            Album remAlb = remOwner.getAlbums().stream()
-                                    .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(remTitle))
-                                    .findFirst()
-                                    .orElse(null);
-                            if (remAlb != null) {
-                                remAlb.getImages()
-                                        .removeIf(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(remImgName));
-                                needSaveData = true;
-                                response.addProperty("statusCode", 200);
-                                response.addProperty("message", "Image removed from album.");
-                            } else {
-                                response.addProperty("statusCode", 404);
-                                response.addProperty("message", "Album not found.");
-                            }
-                        } else {
-                            response.addProperty("statusCode", 404);
-                            response.addProperty("message", "User not found.");
-                        }
-                        break;
-                    }
-
-                    case "moveImage": {
-                        String mUser = request.get("username").getAsString().trim();
-                        String srcTitle = request.get("sourceAlbum").getAsString().trim();
-                        String destTitle = request.get("targetAlbum").getAsString().trim();
-                        String targetImg = request.get("imageName").getAsString().trim();
-                        User mOwner = users.stream()
-                                .filter(usr -> usr.getUserName() != null
-                                        && usr.getUserName().trim().equalsIgnoreCase(mUser))
-                                .findFirst()
-                                .orElse(null);
-                        if (mOwner != null) {
-                            Album srcAlb = mOwner.getAlbums().stream()
-                                    .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(srcTitle))
-                                    .findFirst().orElse(null);
-                            Album destAlb = mOwner.getAlbums().stream()
-                                    .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(destTitle))
-                                    .findFirst().orElse(null);
-                            Image target = allImages.stream()
-                                    .filter(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(targetImg)).findFirst()
-                                    .orElse(null);
-                            if (srcAlb != null && destAlb != null && target != null) {
-                                boolean moved = albumService.moveImageOtherAlbum(srcAlb, destAlb, target);
-                                if (moved) {
-                                    needSaveData = true;
-                                    response.addProperty("statusCode", 200);
-                                    response.addProperty("message", "Image moved successfully.");
-                                } else {
-                                    response.addProperty("statusCode", 400);
-                                    response.addProperty("message", "Failed to move image.");
-                                }
-                            } else {
-                                response.addProperty("statusCode", 404);
-                                response.addProperty("message", "Source/Destination album or image not found.");
-                            }
-                        } else {
-                            response.addProperty("statusCode", 404);
-                            response.addProperty("message", "User not found.");
-                        }
-                        break;
-                    }
-
-                    default:
-                        response.addProperty("statusCode", 400);
-                        response.addProperty("message", "Unknown action");
+                }
+                else {
+                    response.addProperty("statusCode", 400);
+                    response.addProperty("message", "Unknown action");
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -517,6 +499,7 @@ public class APIServer {
                 }
             }
             imgObj.add("likedUsernames", likedUsersArray);
+            imgObj.add("likedByUsers", likedUsersArray);
 
             JsonArray tagsArray = new JsonArray();
             if (img.getTags() != null) {
