@@ -57,10 +57,11 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
       widget.image.likes = _likeCount;
     });
 
-    final response = await SocketService().toggleLike(
-      username: widget.currentUserName,
-      imageName: widget.image.name,
-    );
+    final response = await SocketService().sendRequest({
+      'action': 'toggleLike',
+      'username': widget.currentUserName,
+      'imageName': widget.image.name,
+    });
 
     if (mounted) {
       setState(() {
@@ -91,11 +92,12 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
-    final response = await SocketService().addComment(
-      username: widget.currentUserName,
-      imageName: widget.image.name,
-      comment: text,
-    );
+    final response = await SocketService().sendRequest({
+      'action': 'addComment',
+      'username': widget.currentUserName,
+      'imageName': widget.image.name,
+      'comment': text,
+    });
 
     if (mounted) {
       if (response['statusCode'] == 200) {
@@ -117,11 +119,12 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
     final text = _tagController.text.trim();
     if (text.isEmpty) return;
 
-    final response = await SocketService().addTag(
-      username: widget.currentUserName,
-      imageName: widget.image.name,
-      tag: text,
-    );
+    final response = await SocketService().sendRequest({
+      'action': 'addTag',
+      'username': widget.currentUserName,
+      'imageName': widget.image.name,
+      'tag': text,
+    });
 
     if (mounted) {
       if (response['statusCode'] == 200) {
@@ -171,12 +174,19 @@ class _ImageDetailsScreenState extends State<ImageDetailsScreen> {
               ElevatedButton(
                 onPressed: () async {
                   Navigator.pop(ctx);
-                  final res = await SocketService().moveImage(
-                    username: widget.currentUserName,
-                    sourceAlbum: widget.image.album ?? 'Default',
-                    targetAlbum: selectedAlbum,
-                    imageName: widget.image.name,
-                  );
+                  
+                  final String srcAlbum = widget.image.album ?? '';
+                  final String act = srcAlbum.isNotEmpty && srcAlbum != 'Default' 
+                      ? 'moveImage' 
+                      : 'addImageToAlbum';
+
+                  final res = await SocketService().sendRequest({
+                    'action': act,
+                    'username': widget.currentUserName,
+                    'sourceAlbum': srcAlbum,
+                    'targetAlbum': selectedAlbum,
+                    'imageName': widget.image.name,
+                  });
 
                   if (mounted) {
                     if (res['statusCode'] == 200) {

@@ -36,7 +36,6 @@ public class AlbumService {
         if (user == null || album == null) {
             return false;
         }
-
         return user.getAlbums().remove(album);
     }
 
@@ -45,7 +44,10 @@ public class AlbumService {
             return false;
         }
 
-        if (!album.getImages().contains(image)) {
+        boolean exists = album.getImages().stream()
+                .anyMatch(i -> i.getTitle() != null && i.getTitle().equalsIgnoreCase(image.getTitle()));
+
+        if (!exists) {
             album.addImage(image);
             return true;
         }
@@ -57,7 +59,7 @@ public class AlbumService {
             return false;
         }
 
-        return album.getImages().remove(image);
+        return album.getImages().removeIf(i -> i.getTitle() != null && i.getTitle().equalsIgnoreCase(image.getTitle()));
     }
 
     public boolean moveImageOtherAlbum(Album sourceAlbum, Album targetAlbum, Image image) {
@@ -65,9 +67,13 @@ public class AlbumService {
             return false;
         }
 
-        if (sourceAlbum.getImages().contains(image)) {
-            sourceAlbum.removeImage(image);
-            if (!targetAlbum.getImages().contains(image)) {
+        boolean removed = sourceAlbum.getImages().removeIf(i -> i.getTitle() != null && i.getTitle().equalsIgnoreCase(image.getTitle()));
+
+        if (removed) {
+            boolean existsInTarget = targetAlbum.getImages().stream()
+                    .anyMatch(i -> i.getTitle() != null && i.getTitle().equalsIgnoreCase(image.getTitle()));
+
+            if (!existsInTarget) {
                 targetAlbum.addImage(image);
             }
             return true;

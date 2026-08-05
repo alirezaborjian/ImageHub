@@ -190,6 +190,53 @@ class AlbumDetailsScreen extends StatefulWidget {
 }
 
 class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
+  
+  void _performRemoveImage(ImageModel img) async {
+    final response = await SocketService().sendRequest({
+      'action': 'removeImageFromAlbum',
+      'username': widget.userName,
+      'title': widget.album.title,
+      'name': img.name,
+    });
+
+    if (response['statusCode'] == 200) {
+      widget.onRemoveImage(img);
+      if (mounted) setState(() {});
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Failed to remove image')),
+        );
+      }
+    }
+  }
+
+  void _performMoveImage(AlbumModel target, ImageModel img) async {
+    final response = await SocketService().sendRequest({
+      'action': 'moveImage',
+      'username': widget.userName,
+      'sourceAlbum': widget.album.title,
+      'targetAlbum': target.title,
+      'imageName': img.name,
+    });
+
+    if (response['statusCode'] == 200) {
+      widget.onMoveImage(target, img);
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Moved successfully')),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Failed to move image')),
+        );
+      }
+    }
+  }
+
   void _showImageOptions(ImageModel img) {
     showModalBottomSheet(
       context: context,
@@ -211,8 +258,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
             ),
             onTap: () {
               Navigator.pop(context);
-              widget.onRemoveImage(img);
-              setState(() {});
+              _performRemoveImage(img);
             },
           ),
         ],
@@ -246,8 +292,7 @@ class _AlbumDetailsScreenState extends State<AlbumDetailsScreen> {
                 title: Text(target.title),
                 onTap: () {
                   Navigator.pop(context);
-                  widget.onMoveImage(target, img);
-                  setState(() {});
+                  _performMoveImage(target, img);
                 },
               );
             },

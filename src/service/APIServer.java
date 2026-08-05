@@ -248,12 +248,12 @@ public class APIServer {
                             }
                             allImages.remove(imgToDelete);
                             if (delUserObj.getUploadImages() != null) {
-                                delUserObj.getUploadImages().remove(imgToDelete);
+                                delUserObj.getUploadImages().removeIf(i -> i.getTitle() != null && i.getTitle().equalsIgnoreCase(delImgName));
                             }
                             if (delUserObj.getAlbums() != null) {
                                 for (Album alb : delUserObj.getAlbums()) {
                                     if (alb.getImages() != null) {
-                                        alb.getImages().remove(imgToDelete);
+                                        alb.getImages().removeIf(i -> i.getTitle() != null && i.getTitle().equalsIgnoreCase(delImgName));
                                     }
                                 }
                             }
@@ -401,8 +401,7 @@ public class APIServer {
                                 .findFirst()
                                 .orElse(null);
                         if (remAlb != null) {
-                            remAlb.getImages()
-                                    .removeIf(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(remImgName));
+                            remAlb.getImages().removeIf(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(remImgName));
                             needSaveData = true;
                             response.addProperty("statusCode", 200);
                             response.addProperty("message", "Image removed from album.");
@@ -415,17 +414,54 @@ public class APIServer {
                         response.addProperty("message", "User not found.");
                     }
                 }
+                else if (action.equalsIgnoreCase("addImageToAlbum")) {
+                    String mUser = request.has("username") ? request.get("username").getAsString().trim() : "";
+                    String destTitle = request.has("targetAlbum") ? request.get("targetAlbum").getAsString().trim() : "";
+                    String targetImg = request.has("imageName") ? request.get("imageName").getAsString().trim() :
+                            (request.has("name") ? request.get("name").getAsString().trim() : "");
+
+                    User mOwner = users.stream()
+                            .filter(usr -> usr.getUserName() != null && usr.getUserName().trim().equalsIgnoreCase(mUser))
+                            .findFirst().orElse(null);
+
+                    if (mOwner != null) {
+                        Album destAlb = mOwner.getAlbums().stream()
+                                .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(destTitle))
+                                .findFirst().orElse(null);
+                        Image target = allImages.stream()
+                                .filter(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(targetImg))
+                                .findFirst().orElse(null);
+
+                        if (destAlb != null && target != null) {
+                            boolean added = albumService.addImageToAlbum(destAlb, target);
+                            if (added) {
+                                needSaveData = true;
+                                response.addProperty("statusCode", 200);
+                                response.addProperty("message", "Image added to album.");
+                            } else {
+                                response.addProperty("statusCode", 400);
+                                response.addProperty("message", "Image already in album.");
+                            }
+                        } else {
+                            response.addProperty("statusCode", 404);
+                            response.addProperty("message", "Album or image not found.");
+                        }
+                    } else {
+                        response.addProperty("statusCode", 404);
+                        response.addProperty("message", "User not found.");
+                    }
+                }
                 else if (action.equalsIgnoreCase("moveImage")) {
                     String mUser = request.has("username") ? request.get("username").getAsString().trim() : "";
                     String srcTitle = request.has("sourceAlbum") ? request.get("sourceAlbum").getAsString().trim() : "";
                     String destTitle = request.has("targetAlbum") ? request.get("targetAlbum").getAsString().trim() : "";
                     String targetImg = request.has("imageName") ? request.get("imageName").getAsString().trim() :
                             (request.has("name") ? request.get("name").getAsString().trim() : "");
+
                     User mOwner = users.stream()
-                            .filter(usr -> usr.getUserName() != null
-                                    && usr.getUserName().trim().equalsIgnoreCase(mUser))
-                            .findFirst()
-                            .orElse(null);
+                            .filter(usr -> usr.getUserName() != null && usr.getUserName().trim().equalsIgnoreCase(mUser))
+                            .findFirst().orElse(null);
+
                     if (mOwner != null) {
                         Album srcAlb = mOwner.getAlbums().stream()
                                 .filter(a -> a.getName() != null && a.getName().trim().equalsIgnoreCase(srcTitle))
@@ -436,6 +472,7 @@ public class APIServer {
                         Image target = allImages.stream()
                                 .filter(i -> i.getTitle() != null && i.getTitle().trim().equalsIgnoreCase(targetImg)).findFirst()
                                 .orElse(null);
+
                         if (srcAlb != null && destAlb != null && target != null) {
                             boolean moved = albumService.moveImageOtherAlbum(srcAlb, destAlb, target);
                             if (moved) {

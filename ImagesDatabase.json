@@ -2,28 +2,10 @@
   {
     "id": "1",
     "title": "Monstar",
-    "imagePath": "pictures/1785915863457_Monstar.jpg",
+    "imagePath": "pictures/1785916415236_Monstar.jpg",
     "uploader": "Alireza",
     "uploadDate": "2026-08-05",
-    "caption": "Dragon",
-    "likes": [],
-    "tags": [
-      "dragon"
-    ],
-    "comments": [
-      {
-        "userName": "Alireza",
-        "text": "beautiful"
-      }
-    ]
-  },
-  {
-    "id": "2",
-    "title": "Dragon",
-    "imagePath": "pictures/1785915929331_Dragon.jpg",
-    "uploader": "Alireza",
-    "uploadDate": "2026-08-05",
-    "caption": "Monstar",
+    "caption": "A monstar photo",
     "likes": [],
     "tags": [],
     "comments": []
