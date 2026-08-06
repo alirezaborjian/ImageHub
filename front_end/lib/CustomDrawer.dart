@@ -4,12 +4,14 @@ import 'UserProvider.dart';
 import 'SocketService.dart';
 
 class CustomDrawer extends StatelessWidget {
+  final String? currentUserName;
   final VoidCallback? onLogout;
   final VoidCallback? onNavigateToHome;
   final VoidCallback? onNavigateToAlbums;
 
   const CustomDrawer({
     super.key,
+    this.currentUserName,
     this.onLogout,
     this.onNavigateToHome,
     this.onNavigateToAlbums,
@@ -18,7 +20,9 @@ class CustomDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userProvider = UserProvider.of(context);
-    final userName = userProvider?.userName ?? 'User';
+    final userName = (currentUserName != null && currentUserName!.isNotEmpty)
+        ? currentUserName!
+        : (userProvider?.userName ?? 'User');
 
     return Drawer(
       child: Column(

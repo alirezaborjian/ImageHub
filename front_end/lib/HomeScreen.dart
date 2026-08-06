@@ -310,6 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: CustomDrawer(
+        currentUserName: widget.currentUserName,
         onNavigateToHome: () => setState(() => _selectedIndex = 0),
         onNavigateToAlbums: () => setState(() => _selectedIndex = 1),
       ),
