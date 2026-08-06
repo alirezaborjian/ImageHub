@@ -18,13 +18,6 @@
         "comments": []
       }
     ],
-    "albums": [
-      {
-        "id": "1",
-        "name": "Dragon's",
-        "ownerUsername": "Alireza",
-        "images": []
-      }
-    ]
+    "albums": []
   }
 ]

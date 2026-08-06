@@ -309,7 +309,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const CustomDrawer(),
+      drawer: CustomDrawer(
+        onNavigateToHome: () => setState(() => _selectedIndex = 0),
+        onNavigateToAlbums: () => setState(() => _selectedIndex = 1),
+      ),
       appBar: AppBar(
         title: Text(_selectedIndex == 0 ? 'Explore' : 'Albums'),
         actions: _selectedIndex == 0
@@ -346,12 +349,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       album.images.removeWhere((i) => i.name == img.name);
                     });
                   },
-                  onMoveImageToAnotherAlbum: (sourceTitle, targetTitle, img) {
+                  onMoveImageToAnotherAlbum: (sourceAlb, targetAlb, img) {
                     setState(() {
-                      final sourceAlb = _userAlbums.firstWhere((a) => a.title == sourceTitle);
                       sourceAlb.images.removeWhere((i) => i.name == img.name);
-
-                      final targetAlb = _userAlbums.firstWhere((a) => a.title == targetTitle);
                       if (!targetAlb.images.any((i) => i.name == img.name)) {
                         targetAlb.images.add(img);
                       }
