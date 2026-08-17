@@ -19,5 +19,30 @@
       }
     ],
     "albums": []
+  },
+  {
+    "id": "2",
+    "userName": "Alireza Borjian",
+    "password": "ASas12345",
+    "email": "",
+    "isAdmin": false,
+    "uploadImages": [
+      {
+        "id": "1",
+        "title": "Alireza",
+        "imagePath": "pictures/1786097400495_Alireza.jpg",
+        "uploader": "Alireza Borjian",
+        "uploadDate": "2026-08-07",
+        "caption": "",
+        "likes": [
+          "Alireza Borjian"
+        ],
+        "tags": [
+          "Koorosh"
+        ],
+        "comments": []
+      }
+    ],
+    "albums": []
   }
 ]
