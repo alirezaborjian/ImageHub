@@ -35,8 +35,8 @@ A modern, responsive UI built with Dart:
 ## 💾 Database Strategy
 ImageHub utilizes a lightweight JSON-based storage system, managed via the **Gson** library:
 
-* **UsersDatabase.json:** Stores user profiles, credentials, uploaded image references, and admin status[cite: 3].
-* **ImagesDatabase.json:** Stores comprehensive image metadata (title, caption, uploader, tags, like counts, and comments)[cite: 3].
+* **UsersDatabase.json:** Stores user profiles, credentials, uploaded image references, and admin status.
+* **ImagesDatabase.json:** Stores comprehensive image metadata (title, caption, uploader, tags, like counts, and comments).
 
 ---
 
@@ -67,15 +67,15 @@ ImageHub utilizes a lightweight JSON-based storage system, managed via the **Gso
 
 | Login Page | Sign Up Page | Home Page |
 | :---: | :---: | :---: |
-| <img width="250" src="Screenshots/login.png" /> | <img width="250" src="Screenshots/signup.png" /> | <img width="250" src="Screenshots/home.jpg" /> |
+| <img width="250" src="Screenshots/login.png" /> | <img width="250" src="Screenshots/signup.png" /> | <img width="250" src="Screenshots/home.png" /> |
 
 | Navigation Drawer | Albums Page | Album Details |
 | :---: | :---: | :---: |
-| <img width="250" src="Screenshots/drawer.jpg" /> | <img width="250" src="Screenshots/albums.png" /> | <img width="250" src="Screenshots/album_details.jpg" /> |
+| <img width="250" src="Screenshots/drawer.png" /> | <img width="250" src="Screenshots/albums.png" /> | <img width="250" src="Screenshots/album_details.png" /> |
 
 | Image Details | | |
 | :---: | :---: | :---: |
-| <img width="250" src="Screenshots/image_details.jpg" /> | | |
+| <img width="250" src="Screenshots/image_details.png" /> | | |
 
 ---
 
